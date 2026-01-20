@@ -9,6 +9,11 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/wsgi/
 import os
 import sys
 
+# Activate virtual environment
+path = '/home/cheald10/.virtualenvs/pick4env'
+if path not in sys.path:
+    sys.path.insert(0, path)
+
 project_home = '/home/cheald10/PythonAW'
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
@@ -19,6 +24,6 @@ if project_home2 not in sys.path:
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Pick4baseball.settings_prod")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Pick4baseball.settings")
 
 application = get_wsgi_application()

@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+
+{% load widget_tweaks %}
+
+{% block title %}Login - PICK 4 Baseball Pick em'{% endblock %}
+
+{% block meta_description %}Login to your PICK 4 Baseball Pick em' account to make picks, view results, and compete with friends.{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Login</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===================================================================
+     ACCESSIBLE LOGIN FORM
+     =================================================================== -->
+
+<div class="row">
+    <div class="col-12 col-md-6 col-lg-5 offset-md-3 offset-lg-3 mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h1 class="h4 mb-0">
+                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                    Login to Your Account
+                </h1>
+            </div>
+            
+            <div class="card-body">
+                <!-- Error Messages with ARIA Live Region -->
+                {% if form.errors %}
+                <div class="alert alert-danger" role="alert" aria-live="assertive" aria-atomic="true">
+                    <h2 class="h6 alert-heading">
+                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        Login Error
+                    </h2>
+                    <p class="mb-0">
+                        Your username and password didn't match. Please try again.
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if next %}
+                    {% if user.is_authenticated %}
+                    <div class="alert alert-warning" role="alert" aria-live="polite">
+                        <p class="mb-0">
+                            Your account doesn't have access to this page. To proceed,
+                            please login with an account that has access.
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info" role="alert" aria-live="polite">
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle" aria-hidden="true"></i>
+                            Please login to see this page.
+                        </p>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Login Form -->
+                <form method="post" action="{% url 'login' %}" novalidate aria-label="Login form">
+                    {% csrf_token %}
+                    
+                    <!-- Username Field -->
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            {{ form.username.label }}
+                            <span class="required-indicator" aria-label="required">*</span>
+                        </label>
+                        {{ form.username|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:username-help"|attr:"autocomplete:username" }}
+                        
+                        {% if form.username.errors %}
+                        <div class="invalid-feedback d-block" id="username-error" role="alert">
+                            {% for error in form.username.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div id="username-help" class="form-text">
+                            Enter your username or email address.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">
+                            {{ form.password.label }}
+                            <span class="required-indicator" aria-label="required">*</span>
+                        </label>
+                        <div class="input-group">
+                            {{ form.password|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password-help"|attr:"autocomplete:current-password" }}
+                            <button class="btn btn-outline-secondary" 
+                                    type="button" 
+                                    id="togglePassword"
+                                    aria-label="Show password"
+                                    aria-pressed="false">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        
+                        {% if form.password.errors %}
+                        <div class="invalid-feedback d-block" id="password-error" role="alert">
+                            {% for error in form.password.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div id="password-help" class="form-text">
+                            Enter your password.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Remember Me Checkbox -->
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" 
+                               class="form-check-input" 
+                               id="rememberMe" 
+                               name="remember_me"
+                               aria-describedby="remember-help">
+                        <label class="form-check-label" for="rememberMe">
+                            Remember me on this device
+                        </label>
+                        <div id="remember-help" class="form-text">
+                            Keep me logged in for 2 weeks (don't use on shared devices)
+                        </div>
+                    </div>
+
+                    <!-- Hidden Next Field -->
+                    <input type="hidden" name="next" value="{{ next }}">
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" 
+                                class="btn btn-primary btn-lg"
+                                id="loginButton">
+                            <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                            Login
+                        </button>
+                    </div>
+
+                    <!-- Additional Links -->
+                    <div class="text-center">
+                        <p class="mb-2">
+                            <a href="{% url 'password_reset' %}" class="text-decoration-none">
+                                <i class="fas fa-key" aria-hidden="true"></i>
+                                Forgot your password?
+                            </a>
+                        </p>
+                        <hr class="my-3">
+                        <p class="mb-0">
+                            Don't have an account?
+                            <a href="{% url 'register' %}" class="fw-bold">
+                                Register here
+                            </a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="alert alert-light mt-3 small" role="note">
+            <i class="fas fa-shield-alt text-success" aria-hidden="true"></i>
+            <strong>Secure Connection:</strong> Your login credentials are transmitted securely using encryption.
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Login Form Specific Styles */
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+    }
+    
+    .card-header {
+        border-radius: 0.5rem 0.5rem 0 0;
+        padding: 1.25rem;
+    }
+    
+    .required-indicator {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    /* Enhanced form control focus */
+    .form-control:focus {
+        border-color: #0066cc;
+        box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.25);
+    }
+    
+    .form-control.is-invalid:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+    
+    /* Button hover effects */
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+    
+    /* Loading state */
+    .btn-loading {
+        position: relative;
+        color: transparent !important;
+        pointer-events: none;
+    }
+    
+    .btn-loading::after {
+        content: "";
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        top: 50%;
+        left: 50%;
+        margin-left: -0.5rem;
+        margin-top: -0.5rem;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spinner-border 0.75s linear infinite;
+    }
+    
+    @keyframes spinner-border {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Password toggle button */
+    #togglePassword {
+        border-left: none;
+    }
+    
+    #togglePassword:focus {
+        box-shadow: none;
+        border-color: #0066cc;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .card-header h1 {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    /* ===================================================================
+       LOGIN FORM ACCESSIBILITY AND UX ENHANCEMENTS
+       =================================================================== */
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.querySelector('form[aria-label="Login form"]');
+        const usernameInput = document.getElementById('{{ form.username.id_for_label }}');
+        const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const loginButton = document.getElementById('loginButton');
+        
+        // Auto-focus on first field with error, or username field
+        {% if form.username.errors %}
+        if (usernameInput) usernameInput.focus();
+        {% elif form.password.errors %}
+        if (passwordInput) passwordInput.focus();
+        {% else %}
+        if (usernameInput) usernameInput.focus();
+        {% endif %}
+        
+        // Toggle password visibility
+        if (togglePasswordBtn && passwordInput) {
+            togglePasswordBtn.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Update button state
+                const isVisible = type === 'text';
+                this.setAttribute('aria-pressed', isVisible);
+                this.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
+                
+                // Update icon
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.className = isVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
+                }
+                
+                // Refocus on password field
+                passwordInput.focus();
+            });
+        }
+        
+        // Form submission with loading state
+        if (loginForm && loginButton) {
+            loginForm.addEventListener('submit', function(e) {
+                // Add loading state
+                loginButton.classList.add('btn-loading');
+                loginButton.setAttribute('disabled', 'disabled');
+                loginButton.setAttribute('aria-busy', 'true');
+                
+                // Announce to screen readers
+                announceToScreenReader('Logging in, please wait...');
+            });
+        }
+        
+        // Client-side validation
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                let isValid = true;
+                
+                // Validate username
+                if (!usernameInput.value.trim()) {
+                    e.preventDefault();
+                    showFieldError(usernameInput, 'Username is required');
+                    isValid = false;
+                }
+                
+                // Validate password
+                if (!passwordInput.value.trim()) {
+                    e.preventDefault();
+                    showFieldError(passwordInput, 'Password is required');
+                    isValid = false;
+                }
+                
+                if (!isValid) {
+                    loginButton.classList.remove('btn-loading');
+                    loginButton.removeAttribute('disabled');
+                    loginButton.setAttribute('aria-busy', 'false');
+                }
+            });
+        }
+        
+        // Real-time validation on blur
+        usernameInput.addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                showFieldError(this, 'Username is required');
+            } else {
+                clearFieldError(this);
+            }
+        });
+        
+        passwordInput.addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                showFieldError(this, 'Password is required');
+            } else {
+                clearFieldError(this);
+            }
+        });
+        
+        // Clear errors on input
+        usernameInput.addEventListener('input', function() {
+            clearFieldError(this);
+        });
+        
+        passwordInput.addEventListener('input', function() {
+            clearFieldError(this);
+        });
+        
+        // Helper functions
+        function showFieldError(field, message) {
+            field.classList.add('is-invalid');
+            field.setAttribute('aria-invalid', 'true');
+            
+            // Find or create error message element
+            let errorElement = field.parentElement.querySelector('.invalid-feedback');
+            if (!errorElement) {
+                errorElement = document.createElement('div');
+                errorElement.className = 'invalid-feedback d-block';
+                errorElement.setAttribute('role', 'alert');
+                field.parentElement.appendChild(errorElement);
+            }
+            errorElement.textContent = message;
+            
+            // Update aria-describedby
+            const errorId = field.id + '-error';
+            errorElement.id = errorId;
+            field.setAttribute('aria-describedby', errorId);
+        }
+        
+        function clearFieldError(field) {
+            field.classList.remove('is-invalid');
+            field.removeAttribute('aria-invalid');
+            
+            const errorElement = field.parentElement.querySelector('.invalid-feedback');
+            if (errorElement && !errorElement.textContent.includes('Enter your')) {
+                errorElement.remove();
+            }
+        }
+        
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.className = 'visually-hidden';
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            
+            setTimeout(function() {
+                if (document.body.contains(announcement)) {
+                    document.body.removeChild(announcement);
+                }
+            }, 1000);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter to submit form
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                if (loginForm && document.activeElement.tagName !== 'BUTTON') {
+                    e.preventDefault();
+                    loginForm.submit();
+                }
+            }
+        });
+    });
+    
+    /* ===================================================================
+       END OF LOGIN FORM ENHANCEMENTS
+       =================================================================== */
+</script>
+{% endblock %}

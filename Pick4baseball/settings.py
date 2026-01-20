@@ -49,7 +49,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "Pick4baseball.Pick4baseball.urls"
+ROOT_URLCONF = "Pick4baseball.urls"
 
 TEMPLATES = [
     {

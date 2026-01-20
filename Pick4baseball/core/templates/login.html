@@ -4,7 +4,7 @@
 
 {% block title %}Login - PICK 4 Baseball Pick em'{% endblock %}
 
-{% block meta_description %}Login to your PICK 4 Baseball Pick em' account to make picks, view results, and compete with friends.{% endblock %}
+{% block meta_description %}Login to your PICK 4 Baseball Pick em' account to make your weekly picks and compete for prizes.{% endblock %}
 
 {% block breadcrumbs %}
 <nav aria-label="breadcrumb">
@@ -17,12 +17,8 @@
 
 {% block content %}
 
-<!-- ===================================================================
-     ACCESSIBLE LOGIN FORM
-     =================================================================== -->
-
 <div class="row">
-    <div class="col-12 col-md-6 col-lg-5 offset-md-3 offset-lg-3 mt-4">
+    <div class="col-12 col-md-6 offset-md-3 mt-4">
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
                 <h1 class="h4 mb-0">
@@ -32,115 +28,93 @@
             </div>
             
             <div class="card-body">
-                <!-- Error Messages with ARIA Live Region -->
+                <!-- Error Messages -->
                 {% if form.errors %}
-                <div class="alert alert-danger" role="alert" aria-live="assertive" aria-atomic="true">
-                    <h2 class="h6 alert-heading">
+                <div class="alert alert-danger" role="alert" aria-live="assertive">
+                    <strong>
                         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-                        Login Error
-                    </h2>
-                    <p class="mb-0">
-                        Your username and password didn't match. Please try again.
-                    </p>
+                        Login Failed
+                    </strong>
+                    <p class="mb-0 mt-2">Your username and password didn't match. Please try again.</p>
                 </div>
                 {% endif %}
 
+                <!-- Access Denied Message -->
                 {% if next %}
                     {% if user.is_authenticated %}
                     <div class="alert alert-warning" role="alert" aria-live="polite">
-                        <p class="mb-0">
-                            Your account doesn't have access to this page. To proceed,
-                            please login with an account that has access.
-                        </p>
+                        <strong>
+                            <i class="fas fa-lock" aria-hidden="true"></i>
+                            Access Denied
+                        </strong>
+                        <p class="mb-0 mt-2">Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>
                     </div>
                     {% else %}
                     <div class="alert alert-info" role="alert" aria-live="polite">
-                        <p class="mb-0">
+                        <strong>
                             <i class="fas fa-info-circle" aria-hidden="true"></i>
-                            Please login to see this page.
-                        </p>
+                            Authentication Required
+                        </strong>
+                        <p class="mb-0 mt-2">Please login to see this page.</p>
                     </div>
                     {% endif %}
                 {% endif %}
 
                 <!-- Login Form -->
-                <form method="post" action="{% url 'login' %}" novalidate aria-label="Login form">
+                <form method="post" 
+                      action="{% url 'login' %}" 
+                      novalidate
+                      aria-label="Login form">
                     {% csrf_token %}
                     
-                    <!-- Username Field -->
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">
-                            {{ form.username.label }}
-                            <span class="required-indicator" aria-label="required">*</span>
-                        </label>
-                        {{ form.username|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:username-help"|attr:"autocomplete:username" }}
+                    <fieldset>
+                        <legend class="visually-hidden">Login Credentials</legend>
                         
-                        {% if form.username.errors %}
-                        <div class="invalid-feedback d-block" id="username-error" role="alert">
-                            {% for error in form.username.errors %}
-                            {{ error }}
-                            {% endfor %}
+                        <!-- Username Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                Username <span class="required-indicator" aria-label="required">*</span>
+                            </label>
+                            {{ form.username|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:username-help"|attr:"autofocus:autofocus" }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback d-block" role="alert" id="username-error">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <small id="username-help" class="form-text text-muted">
+                                    Enter your username
+                                </small>
+                            {% endif %}
                         </div>
-                        {% else %}
-                        <div id="username-help" class="form-text">
-                            Enter your username or email address.
-                        </div>
-                        {% endif %}
-                    </div>
 
-                    <!-- Password Field -->
-                    <div class="mb-3">
-                        <label for="{{ form.password.id_for_label }}" class="form-label">
-                            {{ form.password.label }}
-                            <span class="required-indicator" aria-label="required">*</span>
-                        </label>
-                        <div class="input-group">
-                            {{ form.password|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password-help"|attr:"autocomplete:current-password" }}
-                            <button class="btn btn-outline-secondary" 
-                                    type="button" 
-                                    id="togglePassword"
-                                    aria-label="Show password"
-                                    aria-pressed="false">
-                                <i class="fas fa-eye" aria-hidden="true"></i>
-                            </button>
+                        <!-- Password Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">
+                                Password <span class="required-indicator" aria-label="required">*</span>
+                            </label>
+                            {{ form.password|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password-help" }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback d-block" role="alert" id="password-error">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <small id="password-help" class="form-text text-muted">
+                                    Enter your password
+                                </small>
+                            {% endif %}
                         </div>
-                        
-                        {% if form.password.errors %}
-                        <div class="invalid-feedback d-block" id="password-error" role="alert">
-                            {% for error in form.password.errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <div id="password-help" class="form-text">
-                            Enter your password.
-                        </div>
-                        {% endif %}
-                    </div>
 
-                    <!-- Remember Me Checkbox -->
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" 
-                               class="form-check-input" 
-                               id="rememberMe" 
-                               name="remember_me"
-                               aria-describedby="remember-help">
-                        <label class="form-check-label" for="rememberMe">
-                            Remember me on this device
-                        </label>
-                        <div id="remember-help" class="form-text">
-                            Keep me logged in for 2 weeks (don't use on shared devices)
-                        </div>
-                    </div>
-
-                    <!-- Hidden Next Field -->
-                    <input type="hidden" name="next" value="{{ next }}">
+                        <!-- Hidden Next Field -->
+                        <input type="hidden" name="next" value="{{ next }}">
+                    </fieldset>
 
                     <!-- Submit Button -->
                     <div class="d-grid gap-2 mb-3">
-                        <button type="submit" 
-                                class="btn btn-primary btn-lg"
-                                id="loginButton">
+                        <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
                             Login
                         </button>
@@ -156,9 +130,10 @@
                         </p>
                         <hr class="my-3">
                         <p class="mb-0">
-                            Don't have an account?
+                            Don't have an account? 
                             <a href="{% url 'register' %}" class="fw-bold">
                                 Register here
+                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
                             </a>
                         </p>
                     </div>
@@ -166,10 +141,12 @@
             </div>
         </div>
 
-        <!-- Security Notice -->
-        <div class="alert alert-light mt-3 small" role="note">
-            <i class="fas fa-shield-alt text-success" aria-hidden="true"></i>
-            <strong>Secure Connection:</strong> Your login credentials are transmitted securely using encryption.
+        <!-- Help Text -->
+        <div class="mt-3 text-center">
+            <small class="text-muted">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                Your login information is secure and encrypted.
+            </small>
         </div>
     </div>
 </div>
@@ -182,84 +159,88 @@
     /* Login Form Specific Styles */
     .card {
         border: none;
-        border-radius: 0.5rem;
     }
     
     .card-header {
-        border-radius: 0.5rem 0.5rem 0 0;
-        padding: 1.25rem;
+        border-bottom: 3px solid #0056b3;
     }
     
-    .required-indicator {
-        color: #dc3545;
-        font-weight: bold;
+    /* Form Field Styling */
+    .form-control {
+        border: 2px solid #ced4da;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     
-    /* Enhanced form control focus */
+    .form-control:hover {
+        border-color: #0066cc;
+    }
+    
     .form-control:focus {
         border-color: #0066cc;
         box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.25);
     }
     
-    .form-control.is-invalid:focus {
+    /* Error State Styling */
+    .form-control.is-invalid,
+    .form-control:invalid {
         border-color: #dc3545;
+    }
+    
+    .form-control.is-invalid:focus {
         box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
     }
     
-    /* Button hover effects */
+    /* Required Indicator */
+    .required-indicator {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    /* Button Hover Effect */
     .btn-primary {
         transition: all 0.3s ease;
     }
     
-    .btn-primary:hover:not(:disabled) {
+    .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
     }
     
     .btn-primary:active {
         transform: translateY(0);
     }
     
-    /* Loading state */
-    .btn-loading {
-        position: relative;
-        color: transparent !important;
-        pointer-events: none;
+    /* Link Styling */
+    a {
+        transition: color 0.2s ease;
     }
     
-    .btn-loading::after {
-        content: "";
-        position: absolute;
-        width: 1rem;
-        height: 1rem;
-        top: 50%;
-        left: 50%;
-        margin-left: -0.5rem;
-        margin-top: -0.5rem;
-        border: 2px solid #ffffff;
-        border-radius: 50%;
-        border-top-color: transparent;
-        animation: spinner-border 0.75s linear infinite;
+    /* Alert Styling */
+    .alert {
+        border-left: 4px solid;
     }
     
-    @keyframes spinner-border {
-        to { transform: rotate(360deg); }
+    .alert-danger {
+        border-left-color: #dc3545;
     }
     
-    /* Password toggle button */
-    #togglePassword {
-        border-left: none;
+    .alert-warning {
+        border-left-color: #ffc107;
     }
     
-    #togglePassword:focus {
-        box-shadow: none;
-        border-color: #0066cc;
+    .alert-info {
+        border-left-color: #0dcaf0;
     }
     
-    /* Responsive adjustments */
-    @media (max-width: 576px) {
-        .card-header h1 {
-            font-size: 1.25rem;
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+        .btn-primary:hover {
+            transform: none;
+        }
+        
+        .form-control,
+        a {
+            transition: none;
         }
     }
 </style>
@@ -268,174 +249,109 @@
 {% block extra_js %}
 {{ block.super }}
 <script>
-    /* ===================================================================
-       LOGIN FORM ACCESSIBILITY AND UX ENHANCEMENTS
-       =================================================================== */
-    
-    document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced form validation and accessibility
+    (function() {
+        'use strict';
+        
         const loginForm = document.querySelector('form[aria-label="Login form"]');
-        const usernameInput = document.getElementById('{{ form.username.id_for_label }}');
-        const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
-        const togglePasswordBtn = document.getElementById('togglePassword');
-        const loginButton = document.getElementById('loginButton');
         
-        // Auto-focus on first field with error, or username field
-        {% if form.username.errors %}
-        if (usernameInput) usernameInput.focus();
-        {% elif form.password.errors %}
-        if (passwordInput) passwordInput.focus();
-        {% else %}
-        if (usernameInput) usernameInput.focus();
-        {% endif %}
-        
-        // Toggle password visibility
-        if (togglePasswordBtn && passwordInput) {
-            togglePasswordBtn.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                // Update button state
-                const isVisible = type === 'text';
-                this.setAttribute('aria-pressed', isVisible);
-                this.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
-                
-                // Update icon
-                const icon = this.querySelector('i');
-                if (icon) {
-                    icon.className = isVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
-                }
-                
-                // Refocus on password field
-                passwordInput.focus();
-            });
-        }
-        
-        // Form submission with loading state
-        if (loginForm && loginButton) {
-            loginForm.addEventListener('submit', function(e) {
-                // Add loading state
-                loginButton.classList.add('btn-loading');
-                loginButton.setAttribute('disabled', 'disabled');
-                loginButton.setAttribute('aria-busy', 'true');
-                
-                // Announce to screen readers
-                announceToScreenReader('Logging in, please wait...');
-            });
-        }
-        
-        // Client-side validation
         if (loginForm) {
+            // Add ARIA attributes for error states
+            const usernameField = document.getElementById('{{ form.username.id_for_label }}');
+            const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+            
+            // Mark fields as invalid if they have errors
+            {% if form.username.errors %}
+            if (usernameField) {
+                usernameField.setAttribute('aria-invalid', 'true');
+                usernameField.setAttribute('aria-describedby', 'username-error');
+                usernameField.classList.add('is-invalid');
+            }
+            {% endif %}
+            
+            {% if form.password.errors %}
+            if (passwordField) {
+                passwordField.setAttribute('aria-invalid', 'true');
+                passwordField.setAttribute('aria-describedby', 'password-error');
+                passwordField.classList.add('is-invalid');
+            }
+            {% endif %}
+            
+            // Form submission handling
             loginForm.addEventListener('submit', function(e) {
+                const submitButton = loginForm.querySelector('button[type="submit"]');
+                
+                // Basic validation
                 let isValid = true;
                 
-                // Validate username
-                if (!usernameInput.value.trim()) {
-                    e.preventDefault();
-                    showFieldError(usernameInput, 'Username is required');
+                if (!usernameField.value.trim()) {
+                    usernameField.setAttribute('aria-invalid', 'true');
+                    usernameField.classList.add('is-invalid');
                     isValid = false;
                 }
                 
-                // Validate password
-                if (!passwordInput.value.trim()) {
-                    e.preventDefault();
-                    showFieldError(passwordInput, 'Password is required');
+                if (!passwordField.value) {
+                    passwordField.setAttribute('aria-invalid', 'true');
+                    passwordField.classList.add('is-invalid');
                     isValid = false;
                 }
                 
                 if (!isValid) {
-                    loginButton.classList.remove('btn-loading');
-                    loginButton.removeAttribute('disabled');
-                    loginButton.setAttribute('aria-busy', 'false');
+                    e.preventDefault();
+                    
+                    // Focus first invalid field
+                    const firstInvalid = loginForm.querySelector('[aria-invalid="true"]');
+                    if (firstInvalid) {
+                        firstInvalid.focus();
+                    }
+                    
+                    // Announce error to screen readers
+                    announceToScreenReader('Please fill in all required fields');
+                    return false;
+                }
+                
+                // Disable submit button and show loading state
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.setAttribute('aria-busy', 'true');
+                    submitButton.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span> Logging in...';
+                }
+            });
+            
+            // Clear invalid state on input
+            [usernameField, passwordField].forEach(field => {
+                if (field) {
+                    field.addEventListener('input', function() {
+                        if (this.value.trim()) {
+                            this.removeAttribute('aria-invalid');
+                            this.classList.remove('is-invalid');
+                        }
+                    });
                 }
             });
         }
         
-        // Real-time validation on blur
-        usernameInput.addEventListener('blur', function() {
-            if (!this.value.trim()) {
-                showFieldError(this, 'Username is required');
-            } else {
-                clearFieldError(this);
-            }
-        });
-        
-        passwordInput.addEventListener('blur', function() {
-            if (!this.value.trim()) {
-                showFieldError(this, 'Password is required');
-            } else {
-                clearFieldError(this);
-            }
-        });
-        
-        // Clear errors on input
-        usernameInput.addEventListener('input', function() {
-            clearFieldError(this);
-        });
-        
-        passwordInput.addEventListener('input', function() {
-            clearFieldError(this);
-        });
-        
-        // Helper functions
-        function showFieldError(field, message) {
-            field.classList.add('is-invalid');
-            field.setAttribute('aria-invalid', 'true');
-            
-            // Find or create error message element
-            let errorElement = field.parentElement.querySelector('.invalid-feedback');
-            if (!errorElement) {
-                errorElement = document.createElement('div');
-                errorElement.className = 'invalid-feedback d-block';
-                errorElement.setAttribute('role', 'alert');
-                field.parentElement.appendChild(errorElement);
-            }
-            errorElement.textContent = message;
-            
-            // Update aria-describedby
-            const errorId = field.id + '-error';
-            errorElement.id = errorId;
-            field.setAttribute('aria-describedby', errorId);
-        }
-        
-        function clearFieldError(field) {
-            field.classList.remove('is-invalid');
-            field.removeAttribute('aria-invalid');
-            
-            const errorElement = field.parentElement.querySelector('.invalid-feedback');
-            if (errorElement && !errorElement.textContent.includes('Enter your')) {
-                errorElement.remove();
-            }
-        }
-        
+        // Screen reader announcements
         function announceToScreenReader(message) {
             const announcement = document.createElement('div');
-            announcement.setAttribute('role', 'status');
-            announcement.setAttribute('aria-live', 'polite');
-            announcement.className = 'visually-hidden';
+            announcement.setAttribute('role', 'alert');
+            announcement.setAttribute('aria-live', 'assertive');
+            announcement.classList.add('visually-hidden');
             announcement.textContent = message;
             document.body.appendChild(announcement);
             
             setTimeout(function() {
-                if (document.body.contains(announcement)) {
-                    document.body.removeChild(announcement);
-                }
+                document.body.removeChild(announcement);
             }, 1000);
         }
         
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl/Cmd + Enter to submit form
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                if (loginForm && document.activeElement.tagName !== 'BUTTON') {
-                    e.preventDefault();
-                    loginForm.submit();
-                }
-            }
-        });
-    });
-    
-    /* ===================================================================
-       END OF LOGIN FORM ENHANCEMENTS
-       =================================================================== */
+        // Auto-focus on first error field
+        {% if form.errors %}
+        const firstError = document.querySelector('[aria-invalid="true"]');
+        if (firstError) {
+            firstError.focus();
+        }
+        {% endif %}
+    })();
 </script>
 {% endblock %}

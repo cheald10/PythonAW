@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Page Not Found (404) - PICK 4 Baseball Pick em'{% endblock %}
+
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row min-vh-50 align-items-center">
+        <div class="col-12 col-lg-8 mx-auto text-center py-5">
+            <!-- Error Icon -->
+            <div class="mb-4" aria-hidden="true">
+                <i class="fas fa-baseball-ball fa-5x text-muted"></i>
+            </div>
+            
+            <!-- Error Message -->
+            <h1 class="display-1 fw-bold text-primary mb-3" role="status">404</h1>
+            <h2 class="h3 mb-4">Oops! That Page Went Out of the Park</h2>
+            <p class="lead text-muted mb-4">
+                We couldn't find the page you're looking for. It might have been removed, renamed, or never existed.
+            </p>
+
+            <!-- Search Suggestions -->
+            <div class="card border-0 shadow-sm mb-4" role="complementary" aria-labelledby="suggestions-heading">
+                <div class="card-body p-4">
+                    <h3 id="suggestions-heading" class="h5 mb-3">
+                        <i class="fas fa-lightbulb text-warning" aria-hidden="true"></i>
+                        Here's What You Can Do:
+                    </h3>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                            Check the URL for typos
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                            Use the navigation menu above to find what you need
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                            Visit our home page and start from there
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                            Contact us if you think this is an error
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-4">
+                <a href="{% url 'home' %}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-home" aria-hidden="true"></i>
+                    Go to Home Page
+                </a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'make_picks' %}" class="btn btn-success btn-lg px-4">
+                    <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+                    Make Picks
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                    Login
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Popular Pages -->
+            <nav aria-labelledby="popular-pages-heading">
+                <h3 id="popular-pages-heading" class="h6 text-muted mb-3">Or Visit These Popular Pages:</h3>
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <a href="{% url 'rules' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-book" aria-hidden="true"></i>
+                        How to Play
+                    </a>
+                    <a href="{% url 'standings' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+                        Standings
+                    </a>
+                    <a href="{% url 'view_results' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-trophy" aria-hidden="true"></i>
+                        Results
+                    </a>
+                    <a href="{% url 'faq' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-question-circle" aria-hidden="true"></i>
+                        FAQ
+                    </a>
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'register' %}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        Register
+                    </a>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* 404 Page Specific Styles */
+    .min-vh-50 {
+        min-height: 50vh;
+    }
+    
+    /* Error Number Animation */
+    .display-1 {
+        font-size: 8rem;
+        line-height: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .display-1 {
+            font-size: 5rem;
+        }
+    }
+    
+    /* Icon Styling */
+    .fa-baseball-ball {
+        opacity: 0.3;
+    }
+    
+    /* Card Hover Effect */
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Button Styling */
+    .btn {
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    /* List Styling */
+    .list-unstyled li {
+        text-align: left;
+        padding: 0.5rem 0;
+    }
+    
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+        .card,
+        .btn {
+            transition: none;
+        }
+        
+        .card:hover,
+        .btn:hover {
+            transform: none;
+        }
+    }
+    
+    /* High Contrast Mode */
+    @media (prefers-contrast: high) {
+        .text-muted {
+            color: #000 !important;
+        }
+        
+        .fa-baseball-ball {
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Announce 404 error to screen readers
+    (function() {
+        'use strict';
+        
+        // Announce the error
+        const announcement = document.createElement('div');
+        announcement.setAttribute('role', 'alert');
+        announcement.setAttribute('aria-live', 'assertive');
+        announcement.classList.add('visually-hidden');
+        announcement.textContent = 'Error 404: Page not found. Please use the navigation links to find what you are looking for.';
+        document.body.appendChild(announcement);
+        
+        setTimeout(function() {
+            document.body.removeChild(announcement);
+        }, 3000);
+        
+        // Track 404 errors (if you have analytics)
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'page_not_found', {
+                'page_location': window.location.href,
+                'page_path': window.location.pathname
+            });
+        }
+    })();
+</script>
+{% endblock %}

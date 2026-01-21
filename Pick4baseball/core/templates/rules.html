@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Rules - PICK 4 Baseball{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 offset-lg-1">
+            
+            <!-- Page Header -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-book me-2"></i>
+                        Game Rules
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">Official game rules and scoring information.</p>
+                </div>
+            </div>
+
+            <!-- Coming Soon Message -->
+            <div class="alert alert-info shadow-sm">
+                <h4 class="alert-heading">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    Coming Soon!
+                </h4>
+                <p class="mb-0">
+                    Complete game rules, pick categories, scoring system, and FAQs will be available here.
+                </p>
+            </div>
+
+            <!-- Basic Info Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Quick Overview</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Pick 4 Categories:</h6>
+                    <ul>
+                        <li><strong>2 Hits:</strong> Select a player who will get 2+ hits in any game</li>
+                        <li><strong>Home Run:</strong> Select a player who will hit a home run</li>
+                        <li><strong>Starting Winning Pitcher:</strong> Select a starting pitcher who will get the win</li>
+                        <li><strong>Save:</strong> Select a pitcher who will record a save</li>
+                    </ul>
+                    <p class="mb-0">
+                        <strong>Deadline:</strong> Saturday at 11:00 AM CST<br>
+                        <strong>Scoring:</strong> 1 point for each successful pick (max 4 points per week)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Back to Home
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

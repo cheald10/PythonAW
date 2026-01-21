@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+{% block title %}Make Your Picks - Week {{ week.week_number }} - PICK 4 Baseball{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5 fw-bold mb-2">
+                        <i class="fas fa-hand-point-up me-2 text-primary"></i>
+                        Make Your Picks
+                    </h1>
+                    <p class="lead text-muted mb-0">
+                        Week {{ week.week_number }} - {{ week.season_year }} Season
+                    </p>
+                </div>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deadline Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning shadow-sm border-0" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-clock fa-2x me-3"></i>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading mb-1">
+                            <strong>Deadline:</strong> {{ week.deadline|date:"l, F j, Y - g:i A" }} CST
+                        </h5>
+                        <p class="mb-0">
+                            <strong id="countdown-timer" class="text-danger"></strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Picks Form -->
+    <form method="post" id="picks-form" novalidate>
+        {% csrf_token %}
+        
+        <div class="row g-4">
+            <!-- Category 1: 2 Hits -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100 pick-card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">
+                            <i class="fas fa-baseball-ball me-2"></i>
+                            Category 1: 2 Hits
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select a player who will get 2+ hits in any game this week
+                        </p>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <input type="text" 
+                                   class="form-control player-search" 
+                                   data-category="2b"
+                                   placeholder="🔍 Search batters..."
+                                   autocomplete="off">
+                        </div>
+                        
+                        <!-- Player Select -->
+                        <select name="pick_2b" 
+                                id="pick_2b" 
+                                class="form-select form-select-lg player-select" 
+                                required
+                                data-category="2b">
+                            <option value="">Select a batter...</option>
+                            {% for player in batters %}
+                            <option value="{{ player.id }}" 
+                                    data-team="{{ player.team }}"
+                                    data-position="{{ player.position }}"
+                                    {% if current_picks.pick_2b.id == player.id %}selected{% endif %}>
+                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <div class="invalid-feedback">
+                            Please select a player for this category.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category 2: Home Run -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100 pick-card">
+                    <div class="card-header bg-danger text-white">
+                        <h3 class="h5 mb-0">
+                            <i class="fas fa-rocket me-2"></i>
+                            Category 2: Home Run
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select a player who will hit a home run this week
+                        </p>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <input type="text" 
+                                   class="form-control player-search" 
+                                   data-category="hr"
+                                   placeholder="🔍 Search batters..."
+                                   autocomplete="off">
+                        </div>
+                        
+                        <!-- Player Select -->
+                        <select name="pick_hr" 
+                                id="pick_hr" 
+                                class="form-select form-select-lg player-select" 
+                                required
+                                data-category="hr">
+                            <option value="">Select a batter...</option>
+                            {% for player in batters %}
+                            <option value="{{ player.id }}" 
+                                    data-team="{{ player.team }}"
+                                    data-position="{{ player.position }}"
+                                    {% if current_picks.pick_hr.id == player.id %}selected{% endif %}>
+                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <div class="invalid-feedback">
+                            Please select a player for this category.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category 3: Starting Winning Pitcher -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100 pick-card">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="h5 mb-0">
+                            <i class="fas fa-trophy me-2"></i>
+                            Category 3: Starting Winning Pitcher
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select a starting pitcher who will get the win this week
+                        </p>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <input type="text" 
+                                   class="form-control player-search" 
+                                   data-category="swp"
+                                   placeholder="🔍 Search pitchers..."
+                                   autocomplete="off">
+                        </div>
+                        
+                        <!-- Player Select -->
+                        <select name="pick_swp" 
+                                id="pick_swp" 
+                                class="form-select form-select-lg player-select" 
+                                required
+                                data-category="swp">
+                            <option value="">Select a pitcher...</option>
+                            {% for player in pitchers %}
+                            <option value="{{ player.id }}" 
+                                    data-team="{{ player.team }}"
+                                    data-position="{{ player.position }}"
+                                    {% if current_picks.pick_swp.id == player.id %}selected{% endif %}>
+                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <div class="invalid-feedback">
+                            Please select a player for this category.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category 4: Save -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100 pick-card">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="h5 mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Category 4: Save
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select a pitcher who will record a save this week
+                        </p>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <input type="text" 
+                                   class="form-control player-search" 
+                                   data-category="s"
+                                   placeholder="🔍 Search pitchers..."
+                                   autocomplete="off">
+                        </div>
+                        
+                        <!-- Player Select -->
+                        <select name="pick_s" 
+                                id="pick_s" 
+                                class="form-select form-select-lg player-select" 
+                                required
+                                data-category="s">
+                            <option value="">Select a pitcher...</option>
+                            {% for player in pitchers %}
+                            <option value="{{ player.id }}" 
+                                    data-team="{{ player.team }}"
+                                    data-position="{{ player.position }}"
+                                    {% if current_picks.pick_s.id == player.id %}selected{% endif %}>
+                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <div class="invalid-feedback">
+                            Please select a player for this category.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation Warning -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info shadow-sm border-0 d-none" id="duplicate-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> You cannot select the same player for multiple categories.
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg shadow" id="submit-btn">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Submit My Picks
+                    </button>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .pick-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .pick-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .player-select {
+        max-height: 200px;
+    }
+    
+    .player-search {
+        border: 2px solid #dee2e6;
+    }
+    
+    .player-search:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+
+<!-- JavaScript for Form Functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Countdown Timer
+    const deadlineStr = "{{ week.deadline|date:'c' }}";
+    const deadline = new Date(deadlineStr);
+    
+    function updateCountdown() {
+        const now = new Date();
+        const diff = deadline - now;
+        
+        if (diff <= 0) {
+            document.getElementById('countdown-timer').textContent = 'Deadline has passed!';
+            document.getElementById('submit-btn').disabled = true;
+            return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        let timeString = '';
+        if (days > 0) timeString += `${days}d `;
+        timeString += `${hours}h ${minutes}m ${seconds}s remaining`;
+        
+        document.getElementById('countdown-timer').textContent = timeString;
+    }
+    
+    // Update countdown every second
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    
+    // Player Search Functionality
+    const searchBoxes = document.querySelectorAll('.player-search');
+    searchBoxes.forEach(searchBox => {
+        searchBox.addEventListener('input', function() {
+            const category = this.dataset.category;
+            const selectBox = document.getElementById('pick_' + category);
+            const searchTerm = this.value.toLowerCase();
+            
+            Array.from(selectBox.options).forEach(option => {
+                if (option.value === '') {
+                    option.style.display = 'block';
+                    return;
+                }
+                
+                const text = option.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Duplicate Player Validation
+    const playerSelects = document.querySelectorAll('.player-select');
+    const duplicateWarning = document.getElementById('duplicate-warning');
+    
+    function checkDuplicates() {
+        const selectedPlayers = [];
+        let hasDuplicate = false;
+        
+        playerSelects.forEach(select => {
+            const value = select.value;
+            if (value && value !== '') {
+                if (selectedPlayers.includes(value)) {
+                    hasDuplicate = true;
+                    select.classList.add('is-invalid');
+                } else {
+                    selectedPlayers.push(value);
+                    select.classList.remove('is-invalid');
+                }
+            }
+        });
+        
+        if (hasDuplicate) {
+            duplicateWarning.classList.remove('d-none');
+            document.getElementById('submit-btn').disabled = true;
+        } else {
+            duplicateWarning.classList.add('d-none');
+            document.getElementById('submit-btn').disabled = false;
+        }
+    }
+    
+    playerSelects.forEach(select => {
+        select.addEventListener('change', checkDuplicates);
+    });
+    
+    // Form Validation
+    const form = document.getElementById('picks-form');
+    form.addEventListener('submit', function(event) {
+        let isValid = true;
+        
+        // Check if all picks are made
+        playerSelects.forEach(select => {
+            if (!select.value || select.value === '') {
+                select.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                select.classList.remove('is-invalid');
+            }
+        });
+        
+        // Check for duplicates
+        const selectedPlayers = [];
+        playerSelects.forEach(select => {
+            const value = select.value;
+            if (value && selectedPlayers.includes(value)) {
+                isValid = false;
+            }
+            selectedPlayers.push(value);
+        });
+        
+        if (!isValid) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Scroll to first error
+            const firstInvalid = document.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            // Show confirmation
+            if (!confirm('Are you sure you want to submit these picks? You can edit them until the deadline.')) {
+                event.preventDefault();
+                return false;
+            }
+        }
+        
+        form.classList.add('was-validated');
+    });
+    
+    // Initialize validation check on page load
+    checkDuplicates();
+});
+</script>
+{% endblock %}

@@ -1,381 +1,204 @@
 {% extends 'base.html' %}
 
-{% block title %}PICK 4 Baseball Pick em' - Weekly MLB Prediction Game{% endblock %}
-
-{% block meta_description %}Join PICK 4 Baseball Pick em' - the exciting weekly MLB prediction game. Pick 4 players each week, compete with friends, and win prizes throughout the baseball season.{% endblock %}
+{% block title %}Home - PICK 4 Baseball{% endblock %}
 
 {% block content %}
-
-<!-- Hero Section -->
-<section class="hero-section bg-primary text-white py-5" aria-labelledby="hero-heading">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-8 mx-auto text-center">
-                <h1 id="hero-heading" class="display-4 fw-bold mb-4">
-                    <i class="fas fa-baseball-ball" aria-hidden="true"></i>
-                    Welcome to PICK 4 Baseball Pick em'
-                </h1>
-                <p class="lead mb-4">
-                    The ultimate weekly MLB prediction game. Pick 4 players, compete for prizes, and prove you're the ultimate baseball expert!
-                </p>
-                {% if not user.is_authenticated %}
-                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                    <a href="{% url 'register' %}" class="btn btn-success btn-lg px-4 gap-3">
-                        <i class="fas fa-user-plus" aria-hidden="true"></i>
-                        Get Started - It's Free!
-                    </a>
-                    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg px-4">
-                        <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
-                        Login
-                    </a>
+<div class="container py-5">
+    <!-- Welcome Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-lg border-0 bg-primary text-white">
+                <div class="card-body text-center p-5">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <i class="fas fa-baseball-ball me-2"></i>
+                        Welcome, {{ user.first_name|default:user.username }}!
+                    </h1>
+                    <p class="lead mb-0">
+                        Ready to make your picks for the week?
+                    </p>
                 </div>
-                {% else %}
-                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                    <a href="{% url 'make_picks' %}" class="btn btn-success btn-lg px-4 gap-3">
-                        <i class="fas fa-clipboard-check" aria-hidden="true"></i>
-                        Make Your Picks
-                    </a>
-                    <a href="{% url 'standings' %}" class="btn btn-outline-light btn-lg px-4">
-                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
-                        View Standings
-                    </a>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
-</section>
 
-<!-- How It Works Section -->
-<section class="how-it-works py-5" aria-labelledby="how-it-works-heading">
-    <div class="container">
-        <h2 id="how-it-works-heading" class="text-center mb-5">How It Works</h2>
-        <div class="row g-4">
-            <div class="col-md-3">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="feature-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="fas fa-user-plus fa-2x" aria-hidden="true"></i>
+    <!-- Current Week Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h4 mb-2">
+                                <i class="fas fa-calendar-week me-2 text-primary"></i>
+                                Week {{ current_week.week_number }} - {{ current_week.season_year }}
+                            </h2>
+                            <p class="text-muted mb-0">
+                                <i class="far fa-clock me-1"></i>
+                                Deadline: {{ current_week.deadline|date:"l, F j, Y - g:i A" }} CST
+                            </p>
                         </div>
-                        <h3 class="h5 card-title">1. Sign Up</h3>
-                        <p class="card-text">Create your free account in just a few seconds.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="feature-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="fas fa-clipboard-check fa-2x" aria-hidden="true"></i>
+                        <div class="text-end">
+                            {% if time_remaining %}
+                            <div class="badge bg-warning text-dark fs-6 p-3">
+                                <i class="fas fa-hourglass-half me-1"></i>
+                                {{ time_remaining }}
+                            </div>
+                            {% else %}
+                            <div class="badge bg-danger fs-6 p-3">
+                                <i class="fas fa-lock me-1"></i>
+                                Deadline Passed
+                            </div>
+                            {% endif %}
                         </div>
-                        <h3 class="h5 card-title">2. Make Picks</h3>
-                        <p class="card-text">Choose 4 MLB players you think will perform best each week.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="feature-icon bg-warning text-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="fas fa-trophy fa-2x" aria-hidden="true"></i>
-                        </div>
-                        <h3 class="h5 card-title">3. Compete</h3>
-                        <p class="card-text">Earn points based on your players' real-life performances.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="feature-icon bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="fas fa-medal fa-2x" aria-hidden="true"></i>
-                        </div>
-                        <h3 class="h5 card-title">4. Win Prizes</h3>
-                        <p class="card-text">Top performers win weekly and season-long prizes!</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
 
-<!-- Features Section -->
-<section class="features bg-light py-5" aria-labelledby="features-heading">
-    <div class="container">
-        <h2 id="features-heading" class="text-center mb-5">Why Play PICK 4?</h2>
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-dollar-sign fa-2x text-success" aria-hidden="true"></i>
+    <!-- Quick Action Cards -->
+    <div class="row g-4 mb-5">
+        <!-- Make Picks Card -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm border-0 hover-lift">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-hand-point-up fa-3x text-primary"></i>
                     </div>
-                    <div class="ms-3">
-                        <h3 class="h5">Free to Play</h3>
-                        <p>No entry fees, no hidden costs. Just pure baseball fun!</p>
+                    <h3 class="h5 mb-3">Make Your Picks</h3>
+                    <p class="text-muted mb-4">
+                        Select your 4 players for this week
+                    </p>
+                    <div class="mb-3">
+                        <span class="badge bg-secondary">{{ picks_made }}/4 picks made</span>
                     </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-mobile-alt fa-2x text-primary" aria-hidden="true"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h3 class="h5">Play Anywhere</h3>
-                        <p>Mobile-friendly design lets you make picks on any device.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-users fa-2x text-info" aria-hidden="true"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h3 class="h5">Compete with Friends</h3>
-                        <p>Create private leagues and challenge your friends!</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-chart-line fa-2x text-warning" aria-hidden="true"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h3 class="h5">Real-Time Scoring</h3>
-                        <p>Watch your points update as games unfold throughout the week.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-calendar-week fa-2x text-danger" aria-hidden="true"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h3 class="h5">Weekly Prizes</h3>
-                        <p>New chances to win every single week of the season!</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-graduation-cap fa-2x text-secondary" aria-hidden="true"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h3 class="h5">Easy to Learn</h3>
-                        <p>Simple rules make it perfect for casual and hardcore fans alike.</p>
-                    </div>
+                    {% if not current_week.is_completed and time_remaining %}
+                    <a href="{% url 'make_picks' %}" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-edit me-2"></i>
+                        {% if picks_made == 0 %}
+                        Make Picks
+                        {% else %}
+                        Edit Picks
+                        {% endif %}
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100" disabled>
+                        <i class="fas fa-lock me-2"></i>
+                        Picks Locked
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    </div>
-</section>
 
-<!-- Current Season Info -->
-<section class="season-info py-5" aria-labelledby="season-heading">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-10 mx-auto">
-                <div class="card border-0 shadow">
-                    <div class="card-body p-5 text-center">
-                        <h2 id="season-heading" class="mb-4">
-                            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-                            2025 Season Information
-                        </h2>
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <div class="stat-box">
-                                    <i class="fas fa-calendar-week fa-3x text-primary mb-3" aria-hidden="true"></i>
-                                    <h3 class="h5">Current Week</h3>
-                                    <p class="display-6 mb-0">TBD</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-box">
-                                    <i class="fas fa-users fa-3x text-success mb-3" aria-hidden="true"></i>
-                                    <h3 class="h5">Active Players</h3>
-                                    <p class="display-6 mb-0">TBD</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-box">
-                                    <i class="fas fa-dollar-sign fa-3x text-warning mb-3" aria-hidden="true"></i>
-                                    <h3 class="h5">Total Prize Pool</h3>
-                                    <p class="display-6 mb-0">TBD</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% if not user.is_authenticated %}
-                        <div class="mt-4">
-                            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
-                                <i class="fas fa-user-plus" aria-hidden="true"></i>
-                                Join the Competition Now!
-                            </a>
-                        </div>
+        <!-- View Picks Card -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm border-0 hover-lift">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-list fa-3x text-success"></i>
+                    </div>
+                    <h3 class="h5 mb-3">My Picks</h3>
+                    <p class="text-muted mb-4">
+                        View your current selections
+                    </p>
+                    <div class="mb-3">
+                        {% if picks_made == 4 %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>
+                            All picks complete
+                        </span>
+                        {% elif picks_made > 0 %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Incomplete
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">No picks yet</span>
                         {% endif %}
                     </div>
+                    <a href="{% url 'view_picks' %}" class="btn btn-outline-success btn-lg w-100">
+                        <i class="fas fa-eye me-2"></i>
+                        View Picks
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-</section>
 
-<!-- Call to Action -->
-{% if not user.is_authenticated %}
-<section class="cta bg-dark text-white py-5" aria-labelledby="cta-heading">
-    <div class="container text-center">
-        <h2 id="cta-heading" class="mb-4">Ready to Start Playing?</h2>
-        <p class="lead mb-4">Join thousands of baseball fans competing for prizes every week!</p>
-        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <a href="{% url 'register' %}" class="btn btn-success btn-lg px-5">
-                <i class="fas fa-user-plus" aria-hidden="true"></i>
-                Create Free Account
-            </a>
-            <a href="{% url 'rules' %}" class="btn btn-outline-light btn-lg px-5">
-                <i class="fas fa-book" aria-hidden="true"></i>
-                Learn How to Play
-            </a>
+    <!-- User Stats Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body p-4">
+                    <i class="fas fa-trophy fa-2x text-warning mb-3"></i>
+                    <h3 class="h2 fw-bold mb-1">{{ season_points|default:0 }}</h3>
+                    <p class="text-muted mb-0">Season Points</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body p-4">
+                    <i class="fas fa-chart-line fa-2x text-info mb-3"></i>
+                    <h3 class="h2 fw-bold mb-1">{{ season_rank|default:'-' }}</h3>
+                    <p class="text-muted mb-0">Current Rank</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body p-4">
+                    <i class="fas fa-fire fa-2x text-danger mb-3"></i>
+                    <h3 class="h2 fw-bold mb-1">{{ week_points|default:0 }}</h3>
+                    <p class="text-muted mb-0">This Week</p>
+                </div>
+            </div>
         </div>
     </div>
-</section>
-{% endif %}
 
-{% endblock %}
+    <!-- Quick Links Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">
+                        <i class="fas fa-link me-2 text-primary"></i>
+                        Quick Links
+                    </h3>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'leaderboard' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-ranking-star me-1"></i>
+                            Leaderboard
+                        </a>
+                        <a href="{% url 'weekly_results' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            Weekly Results
+                        </a>
+                        <a href="{% url 'rules' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-book me-1"></i>
+                            Game Rules
+                        </a>
+                        <a href="{% url 'account_settings' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-1"></i>
+                            Account Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-{% block extra_css %}
-{{ block.super }}
+<!-- Add some hover effects -->
 <style>
-    /* Hero Section */
-    .hero-section {
-        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
-    .hero-section .btn {
-        transition: all 0.3s ease;
-    }
-    
-    .hero-section .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    
-    /* Feature Icons */
-    .feature-icon {
-        transition: transform 0.3s ease;
-    }
-    
-    .card:hover .feature-icon {
-        transform: scale(1.1);
-    }
-    
-    /* Cards */
-    .card {
-        transition: all 0.3s ease;
-    }
-    
-    .card:hover {
+    .hover-lift:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    /* Feature Items */
-    .features .d-flex {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        transition: background-color 0.3s ease;
-    }
-    
-    .features .d-flex:hover {
-        background-color: rgba(0, 0, 0, 0.02);
-    }
-    
-    /* Stat Boxes */
-    .stat-box {
-        padding: 1rem;
-    }
-    
-    /* CTA Section */
-    .cta {
-        background: linear-gradient(135deg, #212529 0%, #343a40 100%);
-    }
-    
-    /* Accessibility - High Contrast Mode */
-    @media (prefers-contrast: high) {
-        .hero-section {
-            background: #0056b3;
-        }
-        
-        .feature-icon {
-            border: 2px solid currentColor;
-        }
-    }
-    
-    /* Reduced Motion */
-    @media (prefers-reduced-motion: reduce) {
-        .btn:hover,
-        .card:hover,
-        .feature-icon {
-            transform: none;
-        }
-        
-        * {
-            transition: none !important;
-        }
-    }
-    
-    /* Responsive Typography */
-    @media (max-width: 768px) {
-        .display-4 {
-            font-size: 2rem;
-        }
-        
-        .lead {
-            font-size: 1rem;
-        }
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
 </style>
-{% endblock %}
-
-{% block extra_js %}
-{{ block.super }}
-<script>
-    // Announce dynamic content to screen readers
-    (function() {
-        'use strict';
-        
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                    // Set focus to target for keyboard users
-                    target.setAttribute('tabindex', '-1');
-                    target.focus();
-                }
-            });
-        });
-        
-        // Lazy load improvement for screen readers
-        const cards = document.querySelectorAll('.card');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, {
-            threshold: 0.1
-        });
-        
-        cards.forEach(card => observer.observe(card));
-    })();
-</script>
 {% endblock %}

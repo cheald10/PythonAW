@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Weekly Results - PICK 4 Baseball{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 offset-lg-1">
+            
+            <!-- Page Header -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Weekly Results
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">Results for completed weeks will display here.</p>
+                </div>
+            </div>
+
+            <!-- Coming Soon Message -->
+            <div class="alert alert-info shadow-sm">
+                <h4 class="alert-heading">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    Coming Soon!
+                </h4>
+                <p class="mb-0">
+                    Weekly results will show which players hit their targets and final scores for each week.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Back to Home
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

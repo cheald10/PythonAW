@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - Baseball Pick 4</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #C8102E;
+        }
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #C8102E;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        .tagline {
+            font-size: 14px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h1 {
+            color: #002D62;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #555555;
+            margin-bottom: 30px;
+        }
+        .verify-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #C8102E, #8B0A1F);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .verify-button:hover {
+            background: linear-gradient(135deg, #8B0A1F, #C8102E);
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .alternative-link {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #002D62;
+            font-size: 13px;
+            color: #666666;
+            word-wrap: break-word;
+        }
+        .alternative-link p {
+            margin: 0 0 10px 0;
+        }
+        .alternative-link a {
+            color: #002D62;
+            word-break: break-all;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eeeeee;
+            font-size: 13px;
+            color: #999999;
+            text-align: center;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .warning {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-left: 4px solid #FFB81C;
+            font-size: 13px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">PICK 4</div>
+            <div class="tagline">Baseball Fantasy League</div>
+        </div>
+        
+        <h1>Welcome to Baseball Pick 4!</h1>
+        
+        <div class="greeting">
+            <p>Hi {{ user.first_name|default:user.username }},</p>
+        </div>
+        
+        <div class="message">
+            <p>Thank you for registering with Baseball Pick 4! You're one step away from joining the most exciting baseball fantasy competition.</p>
+            
+            <p>To activate your account and start making your picks, please verify your email address by clicking the button below:</p>
+        </div>
+        
+        <div class="button-container">
+            <a href="{{ protocol }}://{{ domain }}{% url 'verify_email' uidb64=uid token=token %}" class="verify-button">
+                Verify Email Address
+            </a>
+        </div>
+        
+        <div class="alternative-link">
+            <p><strong>Or copy and paste this link into your browser:</strong></p>
+            <p><a href="{{ protocol }}://{{ domain }}{% url 'verify_email' uidb64=uid token=token %}">{{ protocol }}://{{ domain }}{% url 'verify_email' uidb64=uid token=token %}</a></p>
+        </div>
+        
+        <div class="warning">
+            <p><strong>⚠️ Security Notice:</strong></p>
+            <p>This verification link will expire in 24 hours. If you didn't create an account with Baseball Pick 4, please ignore this email.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from Baseball Pick 4.</p>
+            <p>Please do not reply to this email.</p>
+            <p>&copy; {{ current_year }} Baseball Pick 4. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

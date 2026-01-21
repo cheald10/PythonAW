@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings - PICK 4 Baseball{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 offset-lg-1">
+            
+            <!-- Page Header -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-cog me-2"></i>
+                        Account Settings
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">Manage your account preferences and profile.</p>
+                </div>
+            </div>
+
+            <!-- Current User Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Current User</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Username:</strong> {{ user.username }}</p>
+                    <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+                    <p class="mb-0"><strong>Member Since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
+                </div>
+            </div>
+
+            <!-- Coming Soon Message -->
+            <div class="alert alert-info shadow-sm">
+                <h4 class="alert-heading">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    Coming Soon!
+                </h4>
+                <p class="mb-0">
+                    Account settings will include options to update your profile, change password, 
+                    manage notifications, and more.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'password_reset' %}" class="btn btn-outline-warning">
+                    <i class="fas fa-key me-2"></i>
+                    Change Password
+                </a>
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Back to Home
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

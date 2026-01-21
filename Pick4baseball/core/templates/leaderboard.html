@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard - PICK 4 Baseball{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 offset-lg-1">
+            
+            <!-- Page Header -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h2 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        Leaderboard
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">Season standings and rankings will display here.</p>
+                </div>
+            </div>
+
+            <!-- Coming Soon Message -->
+            <div class="alert alert-info shadow-sm">
+                <h4 class="alert-heading">
+                    <i class="fas fa-ranking-star me-2"></i>
+                    Coming Soon!
+                </h4>
+                <p class="mb-0">
+                    The leaderboard will show all players ranked by their season points. 
+                    Check back soon to see where you stand!
+                </p>
+            </div>
+
+            <!-- Placeholder Stats Preview -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">What You'll See Here</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Season rankings for all players</li>
+                        <li>Total points earned</li>
+                        <li>Weekly win streaks</li>
+                        <li>Your current position highlighted</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Back to Home
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

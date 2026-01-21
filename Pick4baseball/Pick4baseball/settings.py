@@ -148,7 +148,7 @@ USE_PRODUCTION_EMAIL = True
 if DEBUG and not USE_PRODUCTION_EMAIL:
     # Development: Emails print to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <cheald@healdandheritage.com>'
+    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <claytonheald@gmail.com>'
     print("📧 Email Backend: Console")
 else:
     # Production: SendGrid SMTP
@@ -158,7 +158,7 @@ else:
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = 'apikey'  # This is literal - don't change it
     EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_API_KEY')
-    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <cheald@healdandheritage.com>'
+    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <claytonheald@gmail.com>'
     print("📧 Email Backend: SendGrid")
 
 # Email verification timeout

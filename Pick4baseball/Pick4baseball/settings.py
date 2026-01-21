@@ -142,20 +142,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # EMAIL CONFIGURATION
 # ==============================================================================
 
-if DEBUG:
+# Force production email for testing
+USE_PRODUCTION_EMAIL = True
+
+if DEBUG and not USE_PRODUCTION_EMAIL:
     # Development: Emails print to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <noreply@pick4baseball.com>'
-    print("📧 Email Backend: Console (emails will print to terminal)")
+    print("📧 Email Backend: Console")
 else:
-    # Production: Real email (configure later)
+    # Production: SendGrid SMTP
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_HOST = 'smtp.sendgrid.net'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <noreply@baseballpick4.com>'
+    EMAIL_HOST_USER = 'apikey'  # This is literal - don't change it
+    EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_API_KEY')
+    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <noreply@pick4baseball.com>'
+    print("📧 Email Backend: SendGrid")
 
 # Email verification timeout
 EMAIL_VERIFICATION_TIMEOUT_HOURS = 24

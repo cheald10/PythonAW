@@ -111,6 +111,10 @@ def weekly_results(request):
     """Weekly results placeholder"""
     return render(request, 'weekly_results.html')
 
+@login_required
+def terms(request):
+    """Terms and conditions placeholder"""
+    return render(request, 'terms.html')
 
 @login_required
 def rules(request):

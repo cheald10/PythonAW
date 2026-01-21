@@ -18,6 +18,7 @@ urlpatterns = [
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('results/', views.weekly_results, name='weekly_results'),
     path('rules/', views.rules, name='rules'),
+    path('terms/', views.terms, name='terms'),
     path('settings/', views.account_settings, name='account_settings'),
 
     # Authentication

@@ -19,6 +19,7 @@ urlpatterns = [
     path('results/', views.weekly_results, name='weekly_results'),
     path('rules/', views.rules, name='rules'),
     path('terms/', views.terms, name='terms'),
+    path('privacy/', views.privacy, name='privacy'),
     path('settings/', views.account_settings, name='account_settings'),
 
     # Authentication

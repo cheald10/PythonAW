@@ -126,3 +126,8 @@ def rules(request):
 def account_settings(request):
     """Account settings placeholder"""
     return render(request, 'account_settings.html')
+
+@login_required
+def privacy(request):
+    """Privacy policy placeholder"""
+    return render(request, 'privacy.html')

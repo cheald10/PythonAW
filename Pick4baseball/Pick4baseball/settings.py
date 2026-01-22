@@ -1,4 +1,27 @@
-# Login/Logout redirect URLs
+# Database
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "cheald10$default",
+        "USER": "cheald10",
+        "PASSWORD": "Pick4db2025!",
+        "HOST": "cheald10.mysql.pythonanywhere-services.com",
+        "PORT": "3306",
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
+        "TEST": {
+            "NAME": "cheald10$test_baseballpick4",
+        },
+
+        "TEST": {
+            "NAME": "cheald10$test_baseballpick4",
+            "CREATE_DB": False,
+        },
+    }
+}# Login/Logout redirect URLs
 LOGIN_REDIRECT_URL = 'home'  # or whatever page you want after login
 LOGOUT_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'"""
@@ -80,7 +103,7 @@ WSGI_APPLICATION = "Pick4baseball.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+"""
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -94,7 +117,7 @@ DATABASES = {
         },
     }
 }
-
+"""
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

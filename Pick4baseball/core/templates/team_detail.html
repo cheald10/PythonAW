@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ team.name }} - Baseball Pick 4{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stat-item {
+        padding: 15px;
+        border-left: 4px solid #667eea;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    .member-item {
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+        transition: background 0.2s;
+    }
+    
+    .member-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .member-item:last-child {
+        border-bottom: none;
+    }
+    
+    .badge-captain {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: white;
+    }
+    
+    .join-code-box {
+        background: #f8f9fa;
+        border: 2px dashed #667eea;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .join-code {
+        font-size: 2rem;
+        font-weight: bold;
+        letter-spacing: 3px;
+        color: #667eea;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Team Header -->
+    <div class="team-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-2">{{ team.name }}</h1>
+                {% if team.description %}
+                <p class="lead mb-0">{{ team.description }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="mt-3 mt-md-0">
+                    <span class="badge bg-light text-dark fs-5">Season {{ team.season_year }}</span>
+                    {% if team.is_active %}
+                    <span class="badge bg-success fs-5 ms-2">Active</span>
+                    {% else %}
+                    <span class="badge bg-secondary fs-5 ms-2">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Team Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="info-card">
+                <h4 class="mb-3">
+                    <i class="fas fa-info-circle text-primary"></i> Team Information
+                </h4>
+                
+                <div class="stat-item">
+                    <strong><i class="fas fa-crown text-warning"></i> Captain</strong><br>
+                    <span class="ms-4">{{ team.captain.username }}</span>
+                </div>
+                
+                <div class="stat-item">
+                    <strong><i class="fas fa-users text-info"></i> Members</strong><br>
+                    <span class="ms-4">{{ team.member_count }} / {{ team.max_members }}</span>
+                </div>
+                
+                <div class="stat-item">
+                    <strong><i class="fas fa-dollar-sign text-success"></i> Weekly Fee</strong><br>
+                    <span class="ms-4">${{ team.weekly_fee }}</span>
+                </div>
+                
+                <div class="stat-item">
+                    <strong><i class="fas fa-lock text-danger"></i> Privacy</strong><br>
+                    <span class="ms-4">
+                        {% if team.is_public %}
+                        <i class="fas fa-globe"></i> Public
+                        {% else %}
+                        <i class="fas fa-lock"></i> Private
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Join Code (Captain Only) -->
+            {% if team.captain == request.user %}
+            <div class="info-card">
+                <h4 class="mb-3">
+                    <i class="fas fa-key text-warning"></i> Join Code
+                </h4>
+                <div class="join-code-box">
+                    <small class="text-muted d-block mb-2">Share this code with new members</small>
+                    <div class="join-code">{{ team.join_code }}</div>
+                    <button class="btn btn-sm btn-outline-primary mt-3" onclick="copyJoinCode()">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Team Members -->
+        <div class="col-lg-8 mb-4">
+            <div class="info-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">
+                        <i class="fas fa-users text-primary"></i> Team Members
+                    </h4>
+                    <span class="badge bg-primary">{{ members.count }} Members</span>
+                </div>
+                
+                {% if members %}
+                <div class="members-list">
+                    {% for member in members %}
+                    <div class="member-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-user-circle fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <strong>{{ member.user.username }}</strong>
+                                        {% if member.user.first_name %}
+                                        <br>
+                                        <small class="text-muted">{{ member.user.first_name }} {{ member.user.last_name }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                {% if member.role == 'captain' %}
+                                <span class="badge badge-captain">
+                                    <i class="fas fa-crown"></i> Captain
+                                </span>
+                                {% elif member.role == 'co_captain' %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-star"></i> Co-Captain
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Member</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt"></i> 
+                                    Joined {{ member.joined_at|date:"M Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No active members yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'home' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+                
+                <a href="{% url 'leaderboard' %}?team={{ team.id }}" class="btn btn-primary">
+                    <i class="fas fa-trophy"></i> View Leaderboard
+                </a>
+                
+                {% if team.captain == request.user %}
+                <a href="#" class="btn btn-outline-warning">
+                    <i class="fas fa-cog"></i> Team Settings
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyJoinCode() {
+        const code = "{{ team.join_code }}";
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(code).then(() => {
+            // Show success message
+            const btn = event.target.closest('button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success');
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-primary');
+            }, 2000);
+        }).catch(err => {
+            alert('Failed to copy code: ' + code);
+        });
+    }
+</script>
+{% endblock %}

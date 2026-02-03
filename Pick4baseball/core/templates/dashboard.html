@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - PICK 4 Baseball Pick em'{% endblock %}
+
+{% block meta_description %}View your weekly picks, stats, and team performance on your Baseball Pick 4 dashboard.{% endblock %}
+
+{% block content %}
+<!-- WEEK SUMMARY CARD -->
+<section class="card mb-4">
+    <div class="card-body">
+        <h2 class="card-title h4 mb-3">
+            <i class="fas fa-calendar-week text-primary" aria-hidden="true"></i>
+            Week {{ current_week|default:"N/A" }}
+        </h2>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">Deadline</span>
+            <span class="badge bg-warning text-dark">
+                <i class="fas fa-clock" aria-hidden="true"></i>
+                {{ deadline|default:"TBD" }}
+            </span>
+        </div>
+
+        <hr>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">Your Picks</span>
+            <span class="fw-bold">{{ picks_count|default:0 }}/4 Selected</span>
+        </div>
+
+        <a href="{% url 'make_picks' %}" class="btn btn-primary w-100">
+            <i class="fas fa-edit" aria-hidden="true"></i>
+            {% if picks_count == 0 %}
+                Make Your Picks
+            {% else %}
+                Update Picks
+            {% endif %}
+        </a>
+    </div>
+</section>
+
+<!-- STATS ROW -->
+<section class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h3 class="display-6 fw-bold text-primary mb-2">{{ total_points|default:0 }}</h3>
+                <p class="text-muted small mb-0">Total Points</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h3 class="display-6 fw-bold text-success mb-2">{{ correct_picks|default:0 }}</h3>
+                <p class="text-muted small mb-0">Correct Picks</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h3 class="display-6 fw-bold text-warning mb-2">{{ streak|default:0 }}</h3>
+                <p class="text-muted small mb-0">Streak</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h3 class="display-6 fw-bold text-info mb-2">{{ rank|default:"-" }}</h3>
+                <p class="text-muted small mb-0">Rank</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TEAMS SECTION -->
+{% if teams %}
+<section>
+    <h2 class="h4 mb-3">
+        <i class="fas fa-users text-primary" aria-hidden="true"></i>
+        Teams This Week
+    </h2>
+
+    <div class="row g-3">
+        {% for team in teams %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-2">{{ team.name }}</h3>
+                    <p class="text-muted small mb-1">
+                        <i class="fas fa-chart-line" aria-hidden="true"></i>
+                        Record: {{ team.record|default:"N/A" }}
+                    </p>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-baseball-ball" aria-hidden="true"></i>
+                        Opponent: {{ team.opponent|default:"N/A" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="text-center py-5">
+    <i class="fas fa-users fa-3x text-muted mb-3" aria-hidden="true"></i>
+    <p class="text-muted">No teams to display this week.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Optional: Add countdown timer for deadline
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Dashboard loaded successfully');
+    });
+</script>
+{% endblock %}

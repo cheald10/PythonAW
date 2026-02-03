@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Join Team - Baseball Pick 4{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1><i class="fas fa-sign-in-alt"></i> Join a Team</h1>
+                <p class="lead">Enter your team's join code to get started</p>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card mb-4 border-success">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle text-success"></i>
+                        How to Join
+                    </h5>
+                    <ol class="mb-0">
+                        <li>Get the <strong>8-character join code</strong> from your team captain</li>
+                        <li>Enter the code below</li>
+                        <li>Click "Join Team" to become a member</li>
+                        <li>Start making your weekly picks!</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Join Form -->
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key"></i>
+                        Enter Join Code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="join-form">
+                        {% csrf_token %}
+
+                        <!-- Join Code Input -->
+                        <div class="mb-4">
+                            <label for="{{ form.join_code.id_for_label }}" class="form-label">
+                                <strong>{{ form.join_code.label }}</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.join_code }}
+                            {% if form.join_code.help_text %}
+                                <small class="form-text text-muted">{{ form.join_code.help_text }}</small>
+                            {% endif %}
+                            {% if form.join_code.errors %}
+                                <div class="alert alert-danger mt-2">
+                                    {{ form.join_code.errors }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <strong>Example:</strong> ABC12XYZ
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle"></i>
+                                Join Team
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Options -->
+            <div class="card mt-4 bg-light">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Don't have a join code?</h6>
+                    <p class="text-muted mb-3">
+                        Create your own team and invite friends to join!
+                    </p>
+                    <a href="{% url 'create_team' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i>
+                        Create Your Own Team
+                    </a>
+                </div>
+            </div>
+
+            <!-- Already Member -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    Already a member? 
+                    <a href="{% url 'my_teams' %}">View your teams</a>
+                </small>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('join-form');
+    const joinCodeInput = document.getElementById('{{ form.join_code.id_for_label }}');
+    
+    // Auto-uppercase as user types
+    joinCodeInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Validation on submit
+    form.addEventListener('submit', function(e) {
+        const code = joinCodeInput.value.trim();
+        
+        if (!code) {
+            e.preventDefault();
+            alert('Please enter a join code.');
+            joinCodeInput.focus();
+            return false;
+        }
+        
+        if (code.length < 8) {
+            e.preventDefault();
+            alert('Join code must be 8 characters long.');
+            joinCodeInput.focus();
+            return false;
+        }
+        
+        // Confirm join
+        return confirm(`Join team with code: ${code}?`);
+    });
+});
+</script>
+{% endblock %}

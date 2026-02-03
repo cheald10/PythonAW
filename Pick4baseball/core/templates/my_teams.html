@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Teams - Baseball Pick 4{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-card {
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        border-left-color: #764ba2;
+    }
+    
+    .team-card.captain {
+        border-left-color: #FFD700;
+        background: linear-gradient(to right, #fffef7 0%, #ffffff 20%);
+    }
+    
+    .role-badge {
+        font-size: 0.85rem;
+    }
+    
+    .badge-captain {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #e9ecef;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">
+            <i class="fas fa-users text-primary"></i> My Teams
+        </h1>
+        <div>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    {% if memberships %}
+    <!-- Teams Grid -->
+    <div class="row">
+        {% for membership in memberships %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card team-card h-100 {% if membership.role == 'captain' %}captain{% endif %}"
+                 onclick="window.location.href='{% url 'team_detail' membership.team.id %}'">
+                <div class="card-body">
+                    <!-- Team Name & Season -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">{{ membership.team.name }}</h5>
+                        <span class="badge bg-secondary">{{ membership.team.season_year }}</span>
+                    </div>
+                    
+                    <!-- Role Badge -->
+                    <div class="mb-3">
+                        {% if membership.role == 'captain' %}
+                        <span class="badge badge-captain role-badge">
+                            <i class="fas fa-crown"></i> Captain
+                        </span>
+                        {% elif membership.role == 'co_captain' %}
+                        <span class="badge bg-info role-badge">
+                            <i class="fas fa-star"></i> Co-Captain
+                        </span>
+                        {% else %}
+                        <span class="badge bg-primary role-badge">
+                            <i class="fas fa-user"></i> Member
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Team Info -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-users"></i> {{ membership.team.member_count }} members
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-dollar-sign"></i> ${{ membership.team.weekly_fee }}/week
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-alt"></i> Joined {{ membership.joined_at|date:"M j, Y" }}
+                        </small>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    {% if membership.team.is_active %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle"></i> Active
+                    </span>
+                    {% else %}
+                    <span class="badge bg-warning">
+                        <i class="fas fa-pause-circle"></i> Inactive
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Card Footer -->
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'team_detail' membership.team.id %}" 
+                           class="btn btn-sm btn-outline-primary"
+                           onclick="event.stopPropagation()">
+                            <i class="fas fa-info-circle"></i> View Details
+                        </a>
+                        <a href="{% url 'leaderboard' %}?team={{ membership.team.id }}" 
+                           class="btn btn-sm btn-outline-success"
+                           onclick="event.stopPropagation()">
+                            <i class="fas fa-trophy"></i> Leaderboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="card mt-4 bg-light">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h3 class="text-primary">{{ memberships.count }}</h3>
+                    <p class="text-muted mb-0">Total Teams</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-warning">
+                        {{ memberships|length|add:0 }}
+                        {% comment %}Count captain teams{% endcomment %}
+                    </h3>
+                    <p class="text-muted mb-0">Teams as Captain</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-success">
+                        {% with active=0 %}
+                        {% for m in memberships %}
+                            {% if m.team.is_active %}
+                                {{ active|add:1 }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endwith %}
+                    </h3>
+                    <p class="text-muted mb-0">Active Teams</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-info">2026</h3>
+                    <p class="text-muted mb-0">Current Season</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-users"></i>
+        <h3 class="text-muted mb-3">You're not on any teams yet</h3>
+        <p class="text-muted mb-4">
+            Join a team to start playing or create your own!
+        </p>
+        <div>
+            <a href="#" class="btn btn-primary btn-lg me-2">
+                <i class="fas fa-plus"></i> Create Team
+            </a>
+            <a href="#" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Join Team
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add click animation to cards
+    document.querySelectorAll('.team-card').forEach(card => {
+        card.addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

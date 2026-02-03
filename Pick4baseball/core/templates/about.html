@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}About PICK 4 Baseball{% endblock %}
+
+{% block content %}
+<div class="container mt-4" id="main-content">
+
+    <!-- Page Header -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold" style="color:#003366;">About PICK 4 Baseball</h1>
+        <div style="height:4px; width:80px; background:#b30000; margin:10px auto;"></div>
+    </div>
+
+    <!-- Origin Story Card -->
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-body p-4">
+            <h3 class="fw-bold mb-3" style="color:#003366;">How It Started</h3>
+            <p class="lead">
+                PICK 4 Baseball began the same way a lot of great ideas do — with friends,
+                spreadsheets, and a whole lot of chaos. What started as a weekly MLB prediction
+                game tracked manually in Excel and settled through Venmo quickly grew into
+                something bigger.
+            </p>
+
+            <p>
+                We built PICK 4 to take that same friendly competition and give it structure:
+                automated scoring, clean leaderboards, secure payments, and a polished experience
+                that keeps the fun while removing the hassle.
+            </p>
+
+            <p>
+                It’s still the same game at heart — pick your players, compete with friends,
+                and try to win their money — but now it’s fast, fair, and built for the entire season.
+            </p>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-body p-4">
+            <h3 class="fw-bold mb-3" style="color:#003366;">Frequently Asked Questions</h3>
+            <p class="text-muted">FAQ coming soon — we’re gathering the most common questions from our early players.</p>
+        </div>
+    </div>
+
+    <!-- Support Section -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <h3 class="fw-bold mb-3" style="color:#003366;">Need Help?</h3>
+            <p>
+                Our support team is here to help.
+                You can reach us anytime through our
+                <a href="{% url 'contact' %}" class="fw-bold" style="color:#b30000;">
+                Contact Form
+
+                </a>.
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

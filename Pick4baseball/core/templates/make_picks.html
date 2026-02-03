@@ -1,452 +1,366 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 
-{% block title %}Make Your Picks - Week {{ week.week_number }} - PICK 4 Baseball{% endblock %}
+{% block title %}Make Picks - Baseball Pick 4{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <!-- Page Header -->
-    <div class="row mb-4">
+<div class="container mt-4">
+    <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="display-5 fw-bold mb-2">
-                        <i class="fas fa-hand-point-up me-2 text-primary"></i>
-                        Make Your Picks
-                    </h1>
-                    <p class="lead text-muted mb-0">
-                        Week {{ week.week_number }} - {{ week.season_year }} Season
-                    </p>
-                </div>
-                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Back to Home
-                </a>
-            </div>
+            <h1>Make Your Weekly Picks</h1>
+            <p class="lead">Week {{ week.week_number }} - {{ week.season_year }}</p>
         </div>
     </div>
 
-    <!-- Deadline Alert -->
-    <div class="row mb-4">
+    <!-- Countdown Timer -->
+    <div class="row mb-3">
         <div class="col-12">
-            <div class="alert alert-warning shadow-sm border-0" role="alert">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-clock fa-2x me-3"></i>
-                    <div class="flex-grow-1">
-                        <h5 class="alert-heading mb-1">
-                            <strong>Deadline:</strong> {{ week.deadline|date:"l, F j, Y - g:i A" }} CST
-                        </h5>
-                        <p class="mb-0">
-                            <strong id="countdown-timer" class="text-danger"></strong>
-                        </p>
+            <div class="alert alert-info" id="countdown-alert">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-clock"></i>
+                        <strong>Deadline:</strong> {{ week.deadline_utc|date:"M d, Y g:i A" }} UTC
+                    </div>
+                    <div>
+                        <strong>Time Remaining:</strong>
+                        <span id="countdown-timer" class="badge bg-primary fs-6">
+                            Calculating...
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="row mb-4">
-        <div class="col-12">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Picks Form -->
-    <form method="post" id="picks-form" novalidate>
+    <form method="post">
         {% csrf_token %}
-        
-        <div class="row g-4">
-            <!-- Category 1: 2 Hits -->
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100 pick-card">
-                    <div class="card-header bg-primary text-white">
-                        <h3 class="h5 mb-0">
-                            <i class="fas fa-baseball-ball me-2"></i>
-                            Category 1: 2 Hits
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Select a player who will get 2+ hits in any game this week
-                        </p>
-                        
-                        <!-- Search Box -->
-                        <div class="mb-3">
-                            <input type="text" 
-                                   class="form-control player-search" 
-                                   data-category="2b"
-                                   placeholder="🔍 Search batters..."
-                                   autocomplete="off">
-                        </div>
-                        
-                        <!-- Player Select -->
-                        <select name="pick_2b" 
-                                id="pick_2b" 
-                                class="form-select form-select-lg player-select" 
-                                required
-                                data-category="2b">
-                            <option value="">Select a batter...</option>
-                            {% for player in batters %}
-                            <option value="{{ player.id }}" 
-                                    data-team="{{ player.team }}"
-                                    data-position="{{ player.position }}"
-                                    {% if current_picks.pick_2b.id == player.id %}selected{% endif %}>
-                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        
-                        <div class="invalid-feedback">
-                            Please select a player for this category.
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Category 2: Home Run -->
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100 pick-card">
-                    <div class="card-header bg-danger text-white">
-                        <h3 class="h5 mb-0">
-                            <i class="fas fa-rocket me-2"></i>
-                            Category 2: Home Run
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Select a player who will hit a home run this week
-                        </p>
-                        
-                        <!-- Search Box -->
-                        <div class="mb-3">
-                            <input type="text" 
-                                   class="form-control player-search" 
-                                   data-category="hr"
-                                   placeholder="🔍 Search batters..."
-                                   autocomplete="off">
-                        </div>
-                        
-                        <!-- Player Select -->
-                        <select name="pick_hr" 
-                                id="pick_hr" 
-                                class="form-select form-select-lg player-select" 
-                                required
-                                data-category="hr">
-                            <option value="">Select a batter...</option>
-                            {% for player in batters %}
-                            <option value="{{ player.id }}" 
-                                    data-team="{{ player.team }}"
-                                    data-position="{{ player.position }}"
-                                    {% if current_picks.pick_hr.id == player.id %}selected{% endif %}>
-                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        
-                        <div class="invalid-feedback">
-                            Please select a player for this category.
-                        </div>
-                    </div>
-                </div>
+        <!-- 2 Hits Category -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-baseball-ball"></i>
+                    2 Hits (2B)
+                </h5>
+                <small>Pick a batter who will get 2+ hits in any game</small>
             </div>
-
-            <!-- Category 3: Starting Winning Pitcher -->
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100 pick-card">
-                    <div class="card-header bg-success text-white">
-                        <h3 class="h5 mb-0">
-                            <i class="fas fa-trophy me-2"></i>
-                            Category 3: Starting Winning Pitcher
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Select a starting pitcher who will get the win this week
-                        </p>
-                        
-                        <!-- Search Box -->
-                        <div class="mb-3">
-                            <input type="text" 
-                                   class="form-control player-search" 
-                                   data-category="swp"
-                                   placeholder="🔍 Search pitchers..."
-                                   autocomplete="off">
-                        </div>
-                        
-                        <!-- Player Select -->
-                        <select name="pick_swp" 
-                                id="pick_swp" 
-                                class="form-select form-select-lg player-select" 
-                                required
-                                data-category="swp">
-                            <option value="">Select a pitcher...</option>
-                            {% for player in pitchers %}
-                            <option value="{{ player.id }}" 
-                                    data-team="{{ player.team }}"
-                                    data-position="{{ player.position }}"
-                                    {% if current_picks.pick_swp.id == player.id %}selected{% endif %}>
-                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        
-                        <div class="invalid-feedback">
-                            Please select a player for this category.
-                        </div>
-                    </div>
+            <div class="card-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           id="search_2b" 
+                           placeholder="🔍 Search by player name or team..."
+                           autocomplete="off">
+                    <small class="text-muted">Type to filter players • <span id="count_2b">{{ batters.count }} available</span></small>
                 </div>
-            </div>
-
-            <!-- Category 4: Save -->
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100 pick-card">
-                    <div class="card-header bg-info text-white">
-                        <h3 class="h5 mb-0">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            Category 4: Save
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Select a pitcher who will record a save this week
-                        </p>
-                        
-                        <!-- Search Box -->
-                        <div class="mb-3">
-                            <input type="text" 
-                                   class="form-control player-search" 
-                                   data-category="s"
-                                   placeholder="🔍 Search pitchers..."
-                                   autocomplete="off">
-                        </div>
-                        
-                        <!-- Player Select -->
-                        <select name="pick_s" 
-                                id="pick_s" 
-                                class="form-select form-select-lg player-select" 
-                                required
-                                data-category="s">
-                            <option value="">Select a pitcher...</option>
-                            {% for player in pitchers %}
-                            <option value="{{ player.id }}" 
-                                    data-team="{{ player.team }}"
-                                    data-position="{{ player.position }}"
-                                    {% if current_picks.pick_s.id == player.id %}selected{% endif %}>
-                                {{ player.full_name }} - {{ player.team }} ({{ player.position }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        
-                        <div class="invalid-feedback">
-                            Please select a player for this category.
-                        </div>
-                    </div>
-                </div>
+                
+                <select name="pick_2b" id="pick_2b" class="form-select form-select-lg" required>
+                    <option value="">-- Select a Batter --</option>
+                    {% for player in batters %}
+                        <option value="{{ player.id }}" 
+                                data-name="{{ player.full_name|lower }}"
+                                data-team="{{ player.team_name|lower }}"
+                                {% if existing_picks.pick_2b == player.id %}selected{% endif %}>
+                            {{ player.full_name }} - {{ player.team_name }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 
-        <!-- Validation Warning -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="alert alert-info shadow-sm border-0 d-none" id="duplicate-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> You cannot select the same player for multiple categories.
+        <!-- Home Run Category -->
+        <div class="card mb-3">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-rocket"></i>
+                    Home Run (HR)
+                </h5>
+                <small>Pick a batter who will hit a home run</small>
+            </div>
+            <div class="card-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           id="search_hr" 
+                           placeholder="🔍 Search by player name or team..."
+                           autocomplete="off">
+                    <small class="text-muted">Type to filter players • <span id="count_hr">{{ batters.count }} available</span></small>
                 </div>
+                
+                <select name="pick_hr" id="pick_hr" class="form-select form-select-lg" required>
+                    <option value="">-- Select a Batter --</option>
+                    {% for player in batters %}
+                        <option value="{{ player.id }}"
+                                data-name="{{ player.full_name|lower }}"
+                                data-team="{{ player.team_name|lower }}"
+                                {% if existing_picks.pick_hr == player.id %}selected{% endif %}>
+                            {{ player.full_name }} - {{ player.team_name }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 
-        <!-- Submit Button -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary btn-lg shadow" id="submit-btn">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Submit My Picks
-                    </button>
-                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-                        Cancel
-                    </a>
+        <!-- Starting Winning Pitcher Category -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-trophy"></i>
+                    Starting Winning Pitcher (SWP)
+                </h5>
+                <small>Pick a starting pitcher who will get the win</small>
+            </div>
+            <div class="card-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           id="search_swp" 
+                           placeholder="🔍 Search by player name or team..."
+                           autocomplete="off">
+                    <small class="text-muted">Type to filter players • <span id="count_swp">{{ pitchers.count }} available</span></small>
                 </div>
+                
+                <select name="pick_swp" id="pick_swp" class="form-select form-select-lg" required>
+                    <option value="">-- Select a Pitcher --</option>
+                    {% for player in pitchers %}
+                        <option value="{{ player.id }}"
+                                data-name="{{ player.full_name|lower }}"
+                                data-team="{{ player.team_name|lower }}"
+                                {% if existing_picks.pick_swp == player.id %}selected{% endif %}>
+                            {{ player.full_name }} - {{ player.team_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Save Category -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt"></i>
+                    Save (S)
+                </h5>
+                <small>Pick a relief pitcher who will record a save</small>
+            </div>
+            <div class="card-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           id="search_s" 
+                           placeholder="🔍 Search by player name or team..."
+                           autocomplete="off">
+                    <small class="text-muted">Type to filter players • <span id="count_s">{{ pitchers.count }} available</span></small>
+                </div>
+                
+                <select name="pick_s" id="pick_s" class="form-select form-select-lg" required>
+                    <option value="">-- Select a Pitcher --</option>
+                    {% for player in pitchers %}
+                        <option value="{{ player.id }}"
+                                data-name="{{ player.full_name|lower }}"
+                                data-team="{{ player.team_name|lower }}"
+                                {% if existing_picks.pick_s == player.id %}selected{% endif %}>
+                            {{ player.full_name }} - {{ player.team_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="row mt-4 mb-5">
+            <div class="col-md-6 mb-2">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-save"></i> Save My Picks
+                </button>
+            </div>
+            <div class="col-md-6 mb-2">
+                <a href="{% url 'home' %}" class="btn btn-secondary btn-lg w-100">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
             </div>
         </div>
     </form>
 </div>
 
-<!-- Custom Styles -->
-<style>
-    .pick-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    
-    .pick-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
-    }
-    
-    .player-select {
-        max-height: 200px;
-    }
-    
-    .player-search {
-        border: 2px solid #dee2e6;
-    }
-    
-    .player-search:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-</style>
-
-<!-- JavaScript for Form Functionality -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Countdown Timer
-    const deadlineStr = "{{ week.deadline|date:'c' }}";
-    const deadline = new Date(deadlineStr);
+// Countdown Timer
+const deadline = new Date('{{ week.deadline_utc|date:"c" }}').getTime();
+
+function updateCountdown() {
+    const now = new Date().getTime();
+    const distance = deadline - now;
     
-    function updateCountdown() {
-        const now = new Date();
-        const diff = deadline - now;
-        
-        if (diff <= 0) {
-            document.getElementById('countdown-timer').textContent = 'Deadline has passed!';
-            document.getElementById('submit-btn').disabled = true;
-            return;
-        }
-        
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        let timeString = '';
-        if (days > 0) timeString += `${days}d `;
-        timeString += `${hours}h ${minutes}m ${seconds}s remaining`;
-        
-        document.getElementById('countdown-timer').textContent = timeString;
-    }
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
     
-    // Update countdown every second
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+    const countdownElement = document.getElementById('countdown-timer');
+    const alertElement = document.getElementById('countdown-alert');
+    const submitButton = document.querySelector('button[type="submit"]');
     
-    // Player Search Functionality
-    const searchBoxes = document.querySelectorAll('.player-search');
-    searchBoxes.forEach(searchBox => {
-        searchBox.addEventListener('input', function() {
-            const category = this.dataset.category;
-            const selectBox = document.getElementById('pick_' + category);
-            const searchTerm = this.value.toLowerCase();
-            
-            Array.from(selectBox.options).forEach(option => {
-                if (option.value === '') {
-                    option.style.display = 'block';
-                    return;
-                }
-                
-                const text = option.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    option.style.display = 'block';
-                } else {
-                    option.style.display = 'none';
-                }
-            });
+    if (distance < 0) {
+        // Deadline passed
+        countdownElement.innerHTML = 'DEADLINE PASSED';
+        countdownElement.className = 'badge bg-danger fs-6';
+        alertElement.className = 'alert alert-danger';
+        
+        // Disable form
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-lock"></i> Picks Locked';
+        
+        // Disable all selects and search boxes
+        document.querySelectorAll('select, input[type="text"]').forEach(el => {
+            el.disabled = true;
         });
-    });
-    
-    // Duplicate Player Validation
-    const playerSelects = document.querySelectorAll('.player-select');
-    const duplicateWarning = document.getElementById('duplicate-warning');
-    
-    function checkDuplicates() {
-        const selectedPlayers = [];
-        let hasDuplicate = false;
-        
-        playerSelects.forEach(select => {
-            const value = select.value;
-            if (value && value !== '') {
-                if (selectedPlayers.includes(value)) {
-                    hasDuplicate = true;
-                    select.classList.add('is-invalid');
-                } else {
-                    selectedPlayers.push(value);
-                    select.classList.remove('is-invalid');
-                }
-            }
-        });
-        
-        if (hasDuplicate) {
-            duplicateWarning.classList.remove('d-none');
-            document.getElementById('submit-btn').disabled = true;
+    } else if (distance < 3600000) {
+        // Less than 1 hour - urgent
+        countdownElement.innerHTML = `${minutes}m ${seconds}s`;
+        countdownElement.className = 'badge bg-danger fs-6';
+        alertElement.className = 'alert alert-danger';
+    } else if (distance < 86400000) {
+        // Less than 1 day - warning
+        countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+        countdownElement.className = 'badge bg-warning text-dark fs-6';
+        alertElement.className = 'alert alert-warning';
+    } else {
+        // More than 1 day - normal
+        if (days > 0) {
+            countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m`;
         } else {
-            duplicateWarning.classList.add('d-none');
-            document.getElementById('submit-btn').disabled = false;
+            countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
         }
+        countdownElement.className = 'badge bg-primary fs-6';
+        alertElement.className = 'alert alert-info';
     }
+}
+
+// Update countdown every second
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// Player Search/Filter Function
+function setupSearch(searchInputId, selectId, countId) {
+    const searchInput = document.getElementById(searchInputId);
+    const select = document.getElementById(selectId);
+    const countSpan = document.getElementById(countId);
+    const options = Array.from(select.options);
     
-    playerSelects.forEach(select => {
-        select.addEventListener('change', checkDuplicates);
-    });
-    
-    // Form Validation
-    const form = document.getElementById('picks-form');
-    form.addEventListener('submit', function(event) {
-        let isValid = true;
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        let visibleCount = 0;
         
-        // Check if all picks are made
-        playerSelects.forEach(select => {
-            if (!select.value || select.value === '') {
-                select.classList.add('is-invalid');
-                isValid = false;
+        options.forEach(option => {
+            if (option.value === '') {
+                // Keep the placeholder option
+                option.style.display = '';
+                return;
+            }
+            
+            const playerName = option.getAttribute('data-name') || '';
+            const teamName = option.getAttribute('data-team') || '';
+            
+            if (playerName.includes(searchTerm) || teamName.includes(searchTerm)) {
+                option.style.display = '';
+                visibleCount++;
             } else {
-                select.classList.remove('is-invalid');
+                option.style.display = 'none';
             }
         });
         
-        // Check for duplicates
-        const selectedPlayers = [];
-        playerSelects.forEach(select => {
-            const value = select.value;
-            if (value && selectedPlayers.includes(value)) {
-                isValid = false;
+        // Update count
+        if (searchTerm) {
+            countSpan.textContent = `${visibleCount} found`;
+            countSpan.parentElement.className = 'text-success';
+        } else {
+            countSpan.textContent = `${visibleCount} available`;
+            countSpan.parentElement.className = 'text-muted';
+        }
+    });
+    
+    // Clear search when selection is made
+    select.addEventListener('change', function() {
+        if (this.value) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    });
+}
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up search for all categories
+    setupSearch('search_2b', 'pick_2b', 'count_2b');
+    setupSearch('search_hr', 'pick_hr', 'count_hr');
+    setupSearch('search_swp', 'pick_swp', 'count_swp');
+    setupSearch('search_s', 'pick_s', 'count_s');
+    
+    const form = document.querySelector('form');
+    const selects = {
+        pick2b: document.getElementById('pick_2b'),
+        pickHr: document.getElementById('pick_hr'),
+        pickSwp: document.getElementById('pick_swp'),
+        pickS: document.getElementById('pick_s')
+    };
+    
+    // Add change event listeners for visual feedback
+    Object.values(selects).forEach(select => {
+        select.addEventListener('change', function() {
+            if (this.value) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
             }
-            selectedPlayers.push(value);
+        });
+    });
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Check all picks selected
+        Object.entries(selects).forEach(([key, select]) => {
+            if (!select.value) {
+                isValid = false;
+                select.classList.add('is-invalid');
+                errorMessage = 'Please select all 4 picks before submitting.';
+            }
         });
         
         if (!isValid) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // Scroll to first error
-            const firstInvalid = document.querySelector('.is-invalid');
-            if (firstInvalid) {
-                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        } else {
-            // Show confirmation
-            if (!confirm('Are you sure you want to submit these picks? You can edit them until the deadline.')) {
-                event.preventDefault();
-                return false;
-            }
+            e.preventDefault();
+            alert(errorMessage);
+            return false;
         }
         
-        form.classList.add('was-validated');
+        // Optional: Check for duplicates
+        const values = Object.values(selects).map(s => s.value);
+        const uniqueValues = new Set(values);
+        
+        // Uncomment to enforce no duplicate players
+        // if (values.length !== uniqueValues.size) {
+        //     e.preventDefault();
+        //     alert('You cannot select the same player for multiple categories.');
+        //     return false;
+        // }
+        
+        // Confirm submission
+        const confirmMsg = 'Are you sure you want to submit these picks?\n\n' +
+            `2 Hits: ${selects.pick2b.options[selects.pick2b.selectedIndex].text}\n` +
+            `Home Run: ${selects.pickHr.options[selects.pickHr.selectedIndex].text}\n` +
+            `Starting Winning Pitcher: ${selects.pickSwp.options[selects.pickSwp.selectedIndex].text}\n` +
+            `Save: ${selects.pickS.options[selects.pickS.selectedIndex].text}\n\n` +
+            'You can edit these picks before the deadline.';
+        
+        return confirm(confirmMsg);
     });
-    
-    // Initialize validation check on page load
-    checkDuplicates();
 });
 </script>
 {% endblock %}

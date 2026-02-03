@@ -1,0 +1,614 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Play - Baseball Pick 4</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Antonio:wght@400;600;700&family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5.3.2 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #C8102E;
+            --primary-dark: #8B0A1F;
+            --accent: #002D62;
+            --accent-light: #0051BA;
+            --background: #0A0E1A;
+            --surface: #141B2D;
+            --surface-light: #1E2740;
+            --text: #FFFFFF;
+            --text-muted: #8B93A7;
+            --border: #2A3448;
+            --success: #00843D;
+            
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-heading: 'Antonio', sans-serif;
+            --font-body: 'Lexend', sans-serif;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-body);
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            background: var(--surface) !important;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .navbar-brand {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--primary), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .container {
+            max-width: 1000px;
+            padding: 2rem 1rem;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, var(--surface), var(--surface-light));
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: 4rem;
+            line-height: 1;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+        }
+        
+        .section {
+            margin-bottom: 4rem;
+        }
+        
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .section-title i {
+            color: var(--primary);
+            margin-right: 1rem;
+        }
+        
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(200, 16, 46, 0.2);
+        }
+        
+        .card h3 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .card p {
+            color: #E8E8E8;
+        }
+        
+        .card ul, .card ol {
+            color: #E8E8E8;
+        }
+        
+        .card li {
+            color: #E8E8E8;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .category-card {
+            background: var(--surface-light);
+            border-left: 4px solid;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        
+        .category-card.cat-2h { border-color: var(--accent-light); }
+        .category-card.cat-hr { border-color: var(--primary); }
+        .category-card.cat-swp { border-color: var(--success); }
+        .category-card.cat-s { border-color: #FFB81C; }
+        
+        .category-card h4 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .category-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .price-box {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .price-option {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .price-option h4 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.5rem;
+            top: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 3px solid var(--background);
+        }
+        
+        .timeline-item h4 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box {
+            background: var(--surface-light);
+            border-left: 4px solid var(--accent-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-box.warning {
+            border-color: #FFB81C;
+            background: rgba(255, 184, 28, 0.1);
+        }
+        
+        .info-box.success {
+            border-color: var(--success);
+            background: rgba(0, 132, 61, 0.1);
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(200, 16, 46, 0.4);
+            color: white;
+        }
+        
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .highlight {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">PICK 4</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'make_picks' %}">Make Picks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'how_to_play' %}">How to Play</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h1>HOW TO PLAY</h1>
+            <p>Everything you need to know about Baseball Pick 4</p>
+        </div>
+
+        <!-- Game Overview -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-info-circle"></i>Game Overview</h2>
+            <div class="card">
+                <h3>What is Baseball Pick 4?</h3>
+                <p>Baseball Pick 4 is a <strong>team-based fantasy baseball game</strong> where you compete with friends to predict which players will achieve specific stats during Saturday games.</p>
+                
+                <p style="margin-top: 1rem;"><strong>Key Features:</strong></p>
+                <ul>
+                    <li>Play on <strong>teams</strong> with friends, family, or coworkers</li>
+                    <li>Make <strong>4 picks</strong> every week for Saturday's MLB games</li>
+                    <li>Win <strong>weekly prizes</strong> for perfect picks</li>
+                    <li>Compete for the <strong>season championship</strong></li>
+                    <li>Team captains set the weekly entry fee ($5 or $10)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- The 4 Categories -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-baseball-ball"></i>The 4 Categories</h2>
+            <p>Each week, you'll make ONE pick in each of these 4 categories:</p>
+            
+            <div class="category-grid">
+                <div class="category-card cat-2h">
+                    <div class="icon" style="color: var(--accent-light);">⚾</div>
+                    <h4>2 Hits (2H)</h4>
+                    <p><strong>Pick a batter</strong> who will get 2 or more hits in any Saturday game.</p>
+                    <p class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">Example: Aaron Judge gets 3 hits → Pick WINS!</p>
+                </div>
+                
+                <div class="category-card cat-hr">
+                    <div class="icon" style="color: var(--primary);">🚀</div>
+                    <h4>Home Run (HR)</h4>
+                    <p><strong>Pick a batter</strong> who will hit a home run in any Saturday game.</p>
+                    <p class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">Example: Shohei Ohtani hits a homer → Pick WINS!</p>
+                </div>
+                
+                <div class="category-card cat-swp">
+                    <div class="icon" style="color: var(--success);">🏆</div>
+                    <h4>Starting Winning Pitcher (SWP)</h4>
+                    <p><strong>Pick a starting pitcher</strong> who will get the win on Saturday.</p>
+                    <p class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">Example: Gerrit Cole starts and gets the W → Pick WINS!</p>
+                </div>
+                
+                <div class="category-card cat-s">
+                    <div class="icon" style="color: #FFB81C;">🛡️</div>
+                    <h4>Save (S)</h4>
+                    <p><strong>Pick a relief pitcher</strong> who will record a save in any Saturday game.</p>
+                    <p class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">Example: Emmanuel Clase gets a save → Pick WINS!</p>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong><i class="fas fa-lightbulb"></i> Pro Tip:</strong> You CAN pick the same player for multiple categories if they're a two-way player! For example, Shohei Ohtani could be your HR pick AND your SWP pick in the same week.</p>
+            </div>
+        </section>
+
+        <!-- How to Play -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-gamepad"></i>How to Play</h2>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>1. Join or Create a Team</h4>
+                    <p>Ask your team captain for the join code, or create your own team if you're the captain. Teams need a minimum of 3 players.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>2. Pay Your Weekly Entry Fee</h4>
+                    <p>Each week, pay your team's entry fee ($5 or $10) to play that week. No payment = no picks count toward prizes.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>3. Make Your Picks</h4>
+                    <p>Before the deadline (Saturday 11 AM in your timezone), select ONE player for each of the 4 categories.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>4. Watch Saturday Games</h4>
+                    <p>Cheer on your picks as MLB games happen on Saturday!</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>5. Check Results</h4>
+                    <p>After games end, check to see if your picks hit or missed. Get all 4 right = you win!</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>6. Collect Winnings</h4>
+                    <p>If you got a perfect 4/4, you'll split the weekly pool with any other perfect picks. Payouts are sent automatically (if enabled) or by your team captain.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-dollar-sign"></i>Entry Fees & Prizes</h2>
+            
+            <p>Your team captain chooses the weekly entry fee when creating the team:</p>
+            
+            <div class="price-box">
+                <div class="price-option">
+                    <h4>$5 per Week</h4>
+                    <ul style="margin: 0;">
+                        <li><strong>$4.00</strong> goes to weekly prize pool</li>
+                        <li><strong>$0.50</strong> goes to season championship pot</li>
+                        <li><strong>$0.50</strong> goes to Heald & Heritage LLC</li>
+                    </ul>
+                </div>
+                
+                <div class="price-option">
+                    <h4>$10 per Week</h4>
+                    <ul style="margin: 0;">
+                        <li><strong>$8.00</strong> goes to weekly prize pool</li>
+                        <li><strong>$1.00</strong> goes to season championship pot</li>
+                        <li><strong>$1.00</strong> goes to Heald & Heritage LLC</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💰 Weekly Prizes</h3>
+                <p><strong>Get all 4 picks correct = win!</strong></p>
+                <p>The weekly pool is split equally among all players with perfect 4/4 picks.</p>
+                
+                <div class="info-box success" style="margin-top: 1rem;">
+                    <p><strong>Example ($5 team with 10 players):</strong></p>
+                    <ul style="margin: 0;">
+                        <li>10 players × $5 = $50 collected</li>
+                        <li>Weekly pool = $40</li>
+                        <li>If 2 players go 4/4 → each wins $20!</li>
+                        <li>If 1 player goes 4/4 → wins $40!</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box warning" style="margin-top: 1rem;">
+                    <p><strong><i class="fas fa-exclamation-triangle"></i> No Winners?</strong></p>
+                    <p>If nobody gets 4/4 in a week, the weekly pool <strong>rolls over to the next week</strong>! This means the next week's prize gets bigger and bigger until someone wins.</p>
+                    <p style="margin-top: 0.5rem;">If the final week (Week 26) has no winner, the rollover gets added to the season championship pot!</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🏆 Season Championship</h3>
+                <p>At the end of the 26-week season, the accumulated season pot is split among the top 3 players:</p>
+                <ul>
+                    <li><strong>1st Place:</strong> 50% of season pot</li>
+                    <li><strong>2nd Place:</strong> 35% of season pot</li>
+                    <li><strong>3rd Place:</strong> 15% of season pot</li>
+                </ul>
+                
+                <div class="info-box success" style="margin-top: 1rem;">
+                    <p><strong>Example ($5 team, 10 players, 26 weeks):</strong></p>
+                    <ul style="margin: 0;">
+                        <li>Season pot accumulates $130 ($0.50 × 10 players × 26 weeks)</li>
+                        <li>1st place wins: $65.00</li>
+                        <li>2nd place wins: $45.50</li>
+                        <li>3rd place wins: $19.50</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rules -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-gavel"></i>Important Rules</h2>
+            
+            <div class="card">
+                <h3>📅 Deadline</h3>
+                <p>All picks must be submitted by <span class="highlight">Saturday at 11:00 AM in your timezone</span>.</p>
+                <p>Once submitted, picks are <strong>final</strong> and cannot be changed.</p>
+            </div>
+            
+            <div class="card">
+                <h3>⚾ Game Day</h3>
+                <p>Only <span class="highlight">Saturday games count</span> for Pick 4. Players must achieve the stat during a Saturday game to win.</p>
+            </div>
+            
+            <div class="card">
+                <h3>👥 Playing on Multiple Teams</h3>
+                <p>You can join multiple teams! Each team requires separate:</p>
+                <ul>
+                    <li>Weekly payment</li>
+                    <li>Pick submission</li>
+                    <li>Standings/points</li>
+                </ul>
+                <p>However, you can <strong>copy picks</strong> from one team to another to save time!</p>
+            </div>
+            
+            <div class="card">
+                <h3>💳 Payment</h3>
+                <p>Payment is required <span class="highlight">before your picks count</span> toward prizes that week.</p>
+                <p>If automated payouts are enabled, payments process automatically via Stripe or PayPal. Otherwise, your team captain manages payments.</p>
+            </div>
+            
+            <div class="card">
+                <h3>🔒 Pick Privacy</h3>
+                <p>You can choose to make your picks and scores:</p>
+                <ul>
+                    <li><strong>Private:</strong> Only you and your team see them</li>
+                    <li><strong>Public:</strong> Visible on public leaderboards</li>
+                </ul>
+                <p>Teams can also be public or private!</p>
+            </div>
+        </section>
+
+        <!-- Tips -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-lightbulb"></i>Strategy Tips</h2>
+            
+            <div class="card">
+                <h3>🎯 Picking Smart</h3>
+                <ul>
+                    <li><strong>Check matchups:</strong> Look at who's pitching against each team</li>
+                    <li><strong>Home games:</strong> Players often perform better at home</li>
+                    <li><strong>Hot streaks:</strong> Pick players who are currently hot</li>
+                    <li><strong>Weather:</strong> Wind can help home runs in some ballparks</li>
+                    <li><strong>Two-way players:</strong> Ohtani can be both HR and SWP!</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Research Resources</h3>
+                <ul>
+                    <li>Check MLB.com for lineups and starting pitchers</li>
+                    <li>Look at recent player stats and trends</li>
+                    <li>Consider ballpark factors (hitter-friendly vs pitcher-friendly)</li>
+                    <li>Watch injury reports</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-question-circle"></i>Frequently Asked Questions</h2>
+            
+            <div class="card">
+                <h3>What if a player doesn't play on Saturday?</h3>
+                <p>If your player doesn't play (benched, injured, etc.), your pick automatically <strong>misses</strong> for that category. Choose carefully!</p>
+            </div>
+            
+            <div class="card">
+                <h3>Can I pick the same player twice?</h3>
+                <p><strong>Yes!</strong> If it's a two-way player like Shohei Ohtani, you can pick him for both batting (2H/HR) and pitching (SWP) categories.</p>
+            </div>
+            
+            <div class="card">
+                <h3>What happens if I forget to pay?</h3>
+                <p>Your picks will still be recorded, but they <strong>won't count toward prizes</strong> that week. You'll still accumulate points for season standings though!</p>
+            </div>
+            
+            <div class="card">
+                <h3>How do I know if I won?</h3>
+                <p>Check the app after Saturday games are complete. Results are updated and winners are notified. Your team captain will send payouts if you won!</p>
+            </div>
+            
+            <div class="card">
+                <h3>Can I change my picks after submitting?</h3>
+                <p><strong>No.</strong> All picks are final once submitted. Double-check before you submit!</p>
+            </div>
+        </section>
+
+        <!-- Get Started -->
+        <section class="section">
+            <div class="card" style="text-align: center; padding: 3rem;">
+                <h2 style="font-family: var(--font-display); font-size: 3rem; margin-bottom: 1rem;">Ready to Play?</h2>
+                <p style="font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">Join a team or create your own and start winning!</p>
+                <a href="{% url 'make_picks' %}" class="btn-primary-custom">Make Your Picks →</a>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

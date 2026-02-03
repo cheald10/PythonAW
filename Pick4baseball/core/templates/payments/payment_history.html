@@ -1,0 +1,459 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment History - PICK 4 Baseball Pick em'{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-history-header {
+        background: linear-gradient(135deg, var(--bs-dark) 0%, #1a1f2e 100%);
+        padding: 2rem;
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .payment-history-header h1 {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .payment-history-header p {
+        color: rgba(255, 255, 255, 0.75);
+        margin-bottom: 0;
+    }
+    
+    .stats-card {
+        background: #fff;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+        border-left: 4px solid #C8102E;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #C8102E;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-section {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+    }
+    
+    .table-wrapper {
+        background: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    .table thead {
+        background: linear-gradient(135deg, #002D62 0%, #0051BA 100%);
+        color: #fff;
+    }
+    
+    .table thead th {
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.01);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .badge-status {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .badge-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .badge-failed {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .badge-refunded {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    
+    .btn-export {
+        background: linear-gradient(135deg, #00843D 0%, #006D33 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-export:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 132, 61, 0.3);
+        color: white;
+    }
+    
+    @media (max-width: 768px) {
+        .payment-history-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .stats-row {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        .table {
+            min-width: 800px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="payment-history-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap">
+        <div>
+            <h1>
+                <i class="fas fa-history" aria-hidden="true"></i> Payment History
+            </h1>
+            <p>View all your payment transactions and receipts</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <a href="{% url 'payment_portal' %}" class="btn btn-outline-light me-2">
+                <i class="fas fa-arrow-left"></i> Back to Payments
+            </a>
+            {% if payments %}
+            <button type="button" class="btn btn-export" onclick="exportPayments()">
+                <i class="fas fa-download"></i> Export CSV
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Payment Statistics -->
+{% if payments %}
+<div class="stats-card">
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-value">${{ total_paid|floatformat:2 }}</div>
+            <div class="stat-label">Total Paid</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ total_payments }}</div>
+            <div class="stat-label">Total Payments</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ successful_payments }}</div>
+            <div class="stat-label">Successful</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">${{ average_payment|floatformat:2 }}</div>
+            <div class="stat-label">Avg Payment</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label for="team_filter" class="form-label">
+                <i class="fas fa-users"></i> Team
+            </label>
+            <select name="team" id="team_filter" class="form-select">
+                <option value="">All Teams</option>
+                {% for team in user_teams %}
+                <option value="{{ team.id }}" {% if request.GET.team == team.id|stringformat:"s" %}selected{% endif %}>
+                    {{ team.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="status_filter" class="form-label">
+                <i class="fas fa-check-circle"></i> Status
+            </label>
+            <select name="status" id="status_filter" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+                <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pending</option>
+                <option value="failed" {% if request.GET.status == "failed" %}selected{% endif %}>Failed</option>
+                <option value="refunded" {% if request.GET.status == "refunded" %}selected{% endif %}>Refunded</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="date_from" class="form-label">
+                <i class="fas fa-calendar"></i> From
+            </label>
+            <input type="date" name="date_from" id="date_from" class="form-control" value="{{ request.GET.date_from }}">
+        </div>
+        <div class="col-md-2">
+            <label for="date_to" class="form-label">
+                <i class="fas fa-calendar"></i> To
+            </label>
+            <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request.GET.date_to }}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Payment Table -->
+<div class="table-wrapper">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Team</th>
+                <th>Week</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Transaction ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>
+                    <strong>{{ payment.payment_date|date:"M d, Y" }}</strong><br>
+                    <small class="text-muted">{{ payment.payment_date|time:"g:i A" }}</small>
+                </td>
+                <td>
+                    <i class="fas fa-users text-muted" aria-hidden="true"></i>
+                    {{ payment.team.name }}
+                </td>
+                <td>
+                    <span class="badge bg-secondary">Week {{ payment.week.week_number }}</span>
+                </td>
+                <td>
+                    <strong class="text-success">${{ payment.amount }}</strong>
+                </td>
+                <td>
+                    {% if payment.payment_method == 'stripe' %}
+                        <i class="fab fa-cc-stripe text-primary" aria-hidden="true"></i> Stripe
+                    {% elif payment.payment_method == 'manual' %}
+                        <i class="fas fa-money-bill text-success" aria-hidden="true"></i> Manual
+                    {% else %}
+                        {{ payment.get_payment_method_display }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if payment.payment_status == 'completed' %}
+                        <span class="badge-status badge-completed">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </span>
+                    {% elif payment.payment_status == 'pending' %}
+                        <span class="badge-status badge-pending">
+                            <i class="fas fa-clock"></i> Pending
+                        </span>
+                    {% elif payment.payment_status == 'failed' %}
+                        <span class="badge-status badge-failed">
+                            <i class="fas fa-times-circle"></i> Failed
+                        </span>
+                    {% elif payment.payment_status == 'refunded' %}
+                        <span class="badge-status badge-refunded">
+                            <i class="fas fa-undo"></i> Refunded
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if payment.stripe_charge_id %}
+                        <code class="small">{{ payment.stripe_charge_id|slice:":20" }}...</code>
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'payment_confirmation' payment.id %}" 
+                       class="btn btn-sm btn-outline-primary action-btn"
+                       title="View Receipt">
+                        <i class="fas fa-receipt"></i> Receipt
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination (if needed) -->
+{% if is_paginated %}
+<nav aria-label="Payment history pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.team %}&team={{ request.GET.team }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.team %}&team={{ request.GET.team }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.team %}&team={{ request.GET.team }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="fas fa-angle-right"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.team %}&team={{ request.GET.team }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="table-wrapper">
+    <div class="empty-state">
+        <i class="fas fa-receipt" aria-hidden="true"></i>
+        <h3>No Payment History Yet</h3>
+        <p>You haven't made any payments yet. Start by paying your weekly fee!</p>
+        <a href="{% url 'payment_portal' %}" class="btn btn-primary mt-3">
+            <i class="fas fa-credit-card"></i> Make a Payment
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function exportPayments() {
+        // Create CSV content
+        let csv = 'Date,Team,Week,Amount,Method,Status,Transaction ID\n';
+        
+        {% for payment in payments %}
+        csv += '"{{ payment.payment_date|date:"Y-m-d H:i" }}",';
+        csv += '"{{ payment.team.name }}",';
+        csv += '"Week {{ payment.week.week_number }}",';
+        csv += '"${{ payment.amount }}",';
+        csv += '"{{ payment.get_payment_method_display }}",';
+        csv += '"{{ payment.get_payment_status_display }}",';
+        csv += '"{{ payment.stripe_charge_id|default:"" }}"\n';
+        {% endfor %}
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'payment_history_{{ user.username }}_{{ today|date:"Y-m-d" }}.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }}'s Profile - Baseball Pick 4{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #667eea;
+        border: 4px solid white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: 100%;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .team-badge {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 10px 20px;
+        display: inline-block;
+        margin: 5px;
+    }
+    
+    .rank-badge-large {
+        font-size: 2rem;
+        font-weight: bold;
+        padding: 15px 25px;
+        border-radius: 50px;
+        display: inline-block;
+        margin: 10px 0;
+    }
+    
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #999); color: white; }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+    .rank-other { background: linear-gradient(135deg, #6c757d, #495057); color: white; }
+    
+    .pick-history-table {
+        font-size: 0.9rem;
+    }
+    
+    .pick-hit {
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .pick-miss {
+        color: #dc3545;
+    }
+    
+    .accuracy-bar {
+        height: 30px;
+        background: #e9ecef;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .accuracy-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #20c997);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        transition: width 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
+                <div class="profile-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="col-md">
+                <h1 class="display-4 mb-2">{{ profile_user.username }}</h1>
+                <p class="lead mb-0">
+                    {% if profile_user.first_name %}
+                        {{ profile_user.first_name }} {{ profile_user.last_name }}
+                    {% endif %}
+                    {% if is_own_profile %}
+                        <span class="badge bg-light text-dark ms-2">Your Profile</span>
+                    {% endif %}
+                </p>
+                <p class="mb-0 mt-2">
+                    <i class="fas fa-calendar-alt"></i> Member since {{ profile_user.date_joined|date:"F Y" }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Stats -->
+    {% if standings %}
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card text-center">
+                <i class="fas fa-star text-warning fa-2x"></i>
+                <div class="stat-number text-primary">
+                    {% with standings.first as first_standing %}
+                        {{ first_standing.total_points|default:0 }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">Total Points</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card text-center">
+                <i class="fas fa-bullseye text-success fa-2x"></i>
+                <div class="stat-number text-success">
+                    {% with standings.first as first_standing %}
+                        {{ first_standing.accuracy_percentage|default:0|floatformat:1 }}%
+                    {% endwith %}
+                </div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card text-center">
+                <i class="fas fa-check-double text-info fa-2x"></i>
+                <div class="stat-number text-info">
+                    {% with standings.first as first_standing %}
+                        {{ first_standing.perfect_weeks|default:0 }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">Perfect Weeks</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card text-center">
+                <i class="fas fa-fire text-danger fa-2x"></i>
+                <div class="stat-number text-danger">
+                    {% with standings.first as first_standing %}
+                        {{ first_standing.current_streak|default:0 }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">Current Streak</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Team Standings -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-users"></i> Team Standings - Season {{ season_year }}
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if standings %}
+            <div class="row">
+                {% for standing in standings %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ standing.team.name }}
+                                {% if standing.team_rank %}
+                                <span class="rank-badge-large rank-{% if standing.team_rank <= 3 %}{{ standing.team_rank }}{% else %}other{% endif %}">
+                                    #{{ standing.team_rank }}
+                                </span>
+                                {% endif %}
+                            </h5>
+                            
+                            <!-- Accuracy Bar -->
+                            <div class="accuracy-bar mb-3">
+                                <div class="accuracy-fill" style="width: {{ standing.accuracy_percentage }}%">
+                                    {{ standing.accuracy_percentage|floatformat:1 }}%
+                                </div>
+                            </div>
+                            
+                            <!-- Stats Grid -->
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <strong>{{ standing.total_points }}</strong><br>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                                <div class="col-4">
+                                    <strong>{{ standing.total_picks_hit }}/{{ standing.total_picks_made }}</strong><br>
+                                    <small class="text-muted">Picks</small>
+                                </div>
+                                <div class="col-4">
+                                    <strong>{{ standing.perfect_weeks }}</strong><br>
+                                    <small class="text-muted">Perfect</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Stats -->
+                            <hr>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <i class="fas fa-fire text-danger"></i>
+                                    <strong>{{ standing.current_streak }}</strong> Current Streak
+                                </div>
+                                <div class="col-6">
+                                    <i class="fas fa-trophy text-warning"></i>
+                                    <strong>{{ standing.longest_streak }}</strong> Best Streak
+                                </div>
+                            </div>
+                            
+                            <!-- Financial Stats -->
+                            {% if is_own_profile %}
+                            <hr>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <strong class="text-success">${{ standing.total_winnings }}</strong><br>
+                                    <small class="text-muted">Winnings</small>
+                                </div>
+                                <div class="col-4">
+                                    <strong class="text-danger">${{ standing.total_paid }}</strong><br>
+                                    <small class="text-muted">Paid</small>
+                                </div>
+                                <div class="col-4">
+                                    <strong class="{% if standing.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ standing.net_profit }}
+                                    </strong><br>
+                                    <small class="text-muted">Net</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No team standings available yet. Standings will appear after picks are scored.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Picks History -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-history"></i> Recent Picks
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if recent_picks %}
+            <div class="table-responsive">
+                <table class="table table-hover pick-history-table">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Team</th>
+                            <th>Category</th>
+                            <th>Player</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pick in recent_picks %}
+                        <tr>
+                            <td>
+                                <strong>Week {{ pick.week.week_number }}</strong><br>
+                                <small class="text-muted">{{ pick.week.saturday_date|date:"M j" }}</small>
+                            </td>
+                            <td>{{ pick.team.name }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ pick.category.code }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ pick.mlb_player.full_name }}</strong><br>
+                                <small class="text-muted">{{ pick.mlb_player.team_abbreviation }}</small>
+                            </td>
+                            <td>
+                                {% if pick.result_status == 'hit' %}
+                                <span class="pick-hit">
+                                    <i class="fas fa-check-circle"></i> HIT
+                                </span>
+                                {% elif pick.result_status == 'miss' %}
+                                <span class="pick-miss">
+                                    <i class="fas fa-times-circle"></i> MISS
+                                </span>
+                                {% else %}
+                                <span class="text-muted">
+                                    <i class="fas fa-clock"></i> PENDING
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No picks found for this season.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="mb-4">
+        {% if is_own_profile %}
+        <a href="{% url 'make_picks' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-edit"></i> Make This Week's Picks
+        </a>
+        <a href="{% url 'view_picks' %}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-eye"></i> View My Picks
+        </a>
+        {% endif %}
+        <a href="{% url 'leaderboard' %}" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i> Back to Leaderboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate accuracy bars on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const accuracyFills = document.querySelectorAll('.accuracy-fill');
+        
+        accuracyFills.forEach(fill => {
+            const targetWidth = fill.style.width;
+            fill.style.width = '0%';
+            
+            setTimeout(() => {
+                fill.style.width = targetWidth;
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

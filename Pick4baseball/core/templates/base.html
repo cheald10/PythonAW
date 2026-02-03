@@ -1,20 +1,26 @@
 {% load static %}
 <!doctype html>
+
 <html lang="en" class="h-100">
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <!-- SEO Meta Tags -->
     <meta name="description" content="{% block meta_description %}PICK 4 Baseball Pick em' - Weekly baseball prediction game. Pick players, win prizes, compete with friends throughout the MLB season.{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}baseball, pick em, MLB, fantasy baseball, baseball game, sports prediction, weekly picks{% endblock %}">
     <meta name="author" content="PICK 4 Baseball">
     <meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}">
-    
+
+    <!-- Static CSS -->
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+    <script src="{% static 'core/js/app.js' %}"></script>
+
+
     <!-- Canonical URL -->
     <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
@@ -22,21 +28,21 @@
     <meta property="og:description" content="{% block og_description %}Weekly baseball prediction game. Pick players, win prizes, compete with friends throughout the MLB season.{% endblock %}">
     <meta property="og:site_name" content="PICK 4 Baseball Pick em'">
     <meta property="og:locale" content="en_US">
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="{% block twitter_card %}summary_large_image{% endblock %}">
     <meta name="twitter:url" content="{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}">
     <meta name="twitter:title" content="{% block twitter_title %}PICK 4 Baseball Pick em'{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}Weekly baseball prediction game. Pick players, win prizes, compete with friends.{% endblock %}">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
     <meta name="theme-color" content="#343a40">
 
     <!-- Bootstrap 5.3.2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" 
-          rel="stylesheet" 
-          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
           crossorigin="anonymous">
 
     <!-- Font Awesome -->
@@ -52,40 +58,40 @@
         html, body {
             height: 100%;
         }
-        
+
         body {
             display: flex;
             flex-direction: column;
             padding-top: 4.5rem;
         }
-        
+
         main {
             flex: 1 0 auto;
         }
-        
+
         /* Navigation Enhancements */
         .navbar {
             box-shadow: 0 2px 4px rgba(0,0,0,.1);
         }
-        
+
         .navbar-brand {
             font-weight: bold;
             font-size: 1.25rem;
         }
-        
+
         .nav-link {
             transition: all 0.3s ease;
         }
-        
+
         .nav-link:hover {
             transform: translateY(-1px);
         }
-        
+
         .nav-link.active {
             font-weight: 600;
             position: relative;
         }
-        
+
         .nav-link.active::after {
             content: '';
             position: absolute;
@@ -95,77 +101,77 @@
             height: 2px;
             background-color: #fff;
         }
-        
+
         /* Dropdown Menus */
         .dropdown-menu {
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,.1);
             border: none;
         }
-        
+
         .dropdown-item {
             transition: all 0.2s ease;
             padding: 0.5rem 1rem;
         }
-        
+
         .dropdown-item:hover {
             background-color: #f8f9fa;
             padding-left: 1.5rem;
         }
-        
+
         .dropdown-item i {
             width: 20px;
             text-align: center;
         }
-        
+
         /* Footer */
         .footer {
             flex-shrink: 0;
             background-color: #343a40;
         }
-        
+
         .footer h4 {
             font-size: 1rem;
             margin-bottom: 1rem;
             font-weight: 600;
             color: #fff;
         }
-        
+
         .footer a {
             transition: color 0.2s ease;
             text-decoration: none;
         }
-        
+
         .footer a:hover {
             color: #fff !important;
         }
-        
+
         /* Mobile Improvements */
         @media (max-width: 991px) {
             .navbar-brand {
                 font-size: 1rem;
             }
-            
+
             .navbar-collapse {
                 background-color: #343a40;
                 padding: 1rem;
                 margin: 0.5rem -1rem 0;
             }
-            
+
             .dropdown-menu {
                 background-color: rgba(0,0,0,.1);
                 border: none;
             }
-            
+
             .dropdown-item {
                 color: rgba(255,255,255,.75);
             }
-            
+
             .dropdown-item:hover {
                 background-color: rgba(255,255,255,.1);
                 color: #fff;
             }
-            
+
             .navbar-nav .btn {
                 margin: 0.5rem 0;
                 width: 100%;
@@ -211,7 +217,7 @@
         }
     </style>
     {% endblock %}
-    
+
     <!-- Structured Data -->
     <script type="application/ld+json">
     {
@@ -230,24 +236,27 @@
     <a href="#main-content" class="skip-link">
         Skip to main content
     </a>
-    
+
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" role="navigation" aria-label="Main navigation">
         <div class="container-fluid">
             <!-- Brand -->
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-baseball-ball" aria-hidden="true"></i>
-                <span class="d-none d-sm-inline">PICK 4 Baseball Pick em'</span>
-                <span class="d-inline d-sm-none">BP4</span>
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="{% static 'core/img/logo.png' %}"
+                     alt="Pick 4 Logo"
+                     class="me-2">
+
+                <span class="d-none d-sm-inline fw-bold">PICK 4 Baseball</span>
+                <span class="d-inline d-sm-none fw-bold">BP4</span>
             </a>
-            
+
             <!-- Mobile Toggle -->
             <button type="button"
-                    class="navbar-toggler" 
-                    data-bs-toggle="collapse" 
+                    class="navbar-toggler"
+                    data-bs-toggle="collapse"
                     data-bs-target="#navbarMain"
-                    aria-controls="navbarMain" 
-                    aria-expanded="false" 
+                    aria-controls="navbarMain"
+                    aria-expanded="false"
                     aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -261,42 +270,64 @@
                             <i class="fas fa-home" aria-hidden="true"></i> Home
                         </a>
                     </li>
-                    
+
                     {% if user.is_authenticated %}
                     <!-- User Menu Items - Add your URLs here when ready -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-gamepad" aria-hidden="true"></i> Play
+                        <a class="nav-link" href="{% url 'make_picks' %}">
+                            <i class="fas fa-gamepad" aria-hidden="true"></i> Make Picks
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'payment_portal' %}">
+                            <i class="fas fa-credit-card"></i> Payments
                         </a>
                     </li>
                     {% endif %}
+                    <!-- How to Play - Always visible -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'how_to_play' %}">
+                            <i class="fas fa-question-circle" aria-hidden="true"></i> How to Play
+                        </a>
+                    </li>
                 </ul>
-                
+
                 <!-- Right Side Navigation -->
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <!-- User Account -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" 
-                           href="#" 
-                           id="userDropdown" 
-                           role="button" 
-                           data-bs-toggle="dropdown" 
+                        <a class="nav-link dropdown-toggle"
+                           href="#"
+                           id="userDropdown"
+                           role="button"
+                           data-bs-toggle="dropdown"
                            aria-expanded="false">
-                            <i class="fas fa-user-circle" aria-hidden="true"></i> 
+                            <i class="fas fa-user-circle" aria-hidden="true"></i>
                             <span class="d-none d-md-inline">{{ user.username }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li class="dropdown-header">{{ user.get_full_name|default:user.username }}</li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{% url 'user_profile' %}">
                                     <i class="fas fa-id-card" aria-hidden="true"></i> My Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'my_teams' %}">
+                                    <i class="fas fa-users" aria-hidden="true"></i> My Teams
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'account_settings' %}">
+                                    <i class="fas fa-cog" aria-hidden="true"></i> Settings
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item text-danger" href="#">
+                                <a class="dropdown-item text-danger" href="{% url 'logout' %}">
                                     <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
                                 </a>
                             </li>
@@ -305,12 +336,12 @@
                     {% else %}
                     <!-- Login/Register Buttons -->
                     <li class="nav-item">
-                        <a class="btn btn-outline-success btn-sm me-2" href="#">
+                        <a class="btn btn-outline-success btn-sm me-2" href="{% url 'register' %}">
                             <i class="fas fa-user-plus" aria-hidden="true"></i> Register
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-outline-primary btn-sm" href="#">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'login' %}">
                             <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login
                         </a>
                     </li>
@@ -325,7 +356,7 @@
         <div class="container my-4">
             <!-- Breadcrumbs -->
             {% block breadcrumbs %}{% endblock %}
-            
+
             <!-- Django Messages -->
             {% if messages %}
             <div class="messages">
@@ -344,41 +375,49 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer py-4 bg-dark text-white mt-auto" aria-label="Site footer">
+<footer class="footer mt-auto text-white" aria-label="Site footer">
+
+    <!-- Scoreboard-style header -->
+    <div style="
+        background-color: #003366;
+        padding: 10px 0;
+        border-bottom: 4px solid #b30000;
+        text-align: center;
+        letter-spacing: 2px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+    ">
+        Pick 4 Baseball • Support & Info
+    </div>
+
+    <div class="py-4 bg-dark">
         <div class="container">
             <div class="row">
-                <!-- Quick Links -->
-                <div class="col-md-4 mb-3">
-                    <h4>PICK 4 Baseball</h4>
+
+                <!-- Quick Info -->
+                <div class="col-md-6 mb-3">
+                    <h4 class="fw-bold" style="color:#b30000;">PICK 4 Baseball</h4>
                     <p class="text-white-50 small">
                         Weekly baseball prediction game. Pick players, win prizes!
                     </p>
                 </div>
-                
-                <!-- Info -->
-                <div class="col-md-4 mb-3">
-                    <h4>Information</h4>
+
+                <!-- Links -->
+                <div class="col-md-6 mb-3">
+                    <h4 class="fw-bold" style="color:#b30000;">Information</h4>
                     <ul class="list-unstyled">
-                        <li><a href="#" class="text-white-50">About</a></li>
-                        <li><a href="#" class="text-white-50">How to Play</a></li>
-                        <li><a href="#" class="text-white-50">Contact</a></li>
+                        <li><a href="{% url 'about' %}" class="text-white-50">About</a></li>
+                        <li><a href="{% url 'rules' %}" class="text-white-50">How to Play</a></li>
+                        <li><a href="{% url 'contact' %}" class="text-white-50">Contact</a></li>
+                        <li><a href="{% url 'register' %}" class="text-white-50 fw-bold">Join Today!</a></li>
                     </ul>
                 </div>
-                
-                <!-- Season Info -->
-                <div class="col-md-4 mb-3">
-                    <h4>2025 Season</h4>
-                    <p class="text-white-50 small mb-1">
-                        <i class="fas fa-calendar-week" aria-hidden="true"></i> Season in Progress
-                    </p>
-                    <p class="text-white-50 small mb-0">
-                        <i class="fas fa-users" aria-hidden="true"></i> Join Today!
-                    </p>
-                </div>
+
             </div>
-            
+
             <hr class="bg-white my-3" style="opacity: 0.1;">
-            
+
             <!-- Copyright -->
             <div class="row">
                 <div class="col-md-12 text-center">
@@ -388,11 +427,12 @@
                 </div>
             </div>
         </div>
-    </footer>
+    </div>
+</footer>
 
-    <!-- Bootstrap 5.3.2 Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" 
-            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" 
+    <!-- Bootstrap 5.3.2 Bundle JS (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>
 
     {% block extra_js %}{% endblock %}

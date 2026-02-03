@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Team Leaderboard - Baseball Pick 4{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    
+    .team-card.user-team {
+        border-left-color: #28a745;
+        background-color: #f8fff9;
+    }
+    
+    .rank-badge {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #999); color: white; }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+    .rank-other { background: linear-gradient(135deg, #6c757d, #495057); color: white; }
+    
+    .stat-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #212529;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">
+                <i class="fas fa-trophy text-warning"></i> Team Leaderboard
+            </h1>
+            <p class="lead text-muted">
+                Season {{ season_year }} - Global Team Rankings
+            </p>
+        </div>
+    </div>
+
+    <!-- Current Week Info -->
+    {% if current_week %}
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-calendar-alt"></i> 
+        <strong>Current Week:</strong> Week {{ current_week.week_number }} - {{ current_week.saturday_date|date:"F j, Y" }}
+        {% if current_week.is_active %}
+        <span class="badge bg-success ms-2">ACTIVE</span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Teams List -->
+    {% if team_standings %}
+    <div class="row">
+        {% for standing in team_standings %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card team-card h-100 {% if standing.team.id in user_teams %}user-team{% endif %}">
+                <div class="card-body">
+                    <!-- Rank Badge -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rank-badge rank-{% if standing.rank <= 3 %}{{ standing.rank }}{% else %}other{% endif %}">
+                            #{{ standing.rank }}
+                        </div>
+                        <div class="ms-3 flex-grow-1">
+                            <h5 class="card-title mb-0">
+                                {{ standing.team.name }}
+                                {% if standing.team.id in user_teams %}
+                                <span class="badge bg-success">Your Team</span>
+                                {% endif %}
+                            </h5>
+                            <small class="text-muted">
+                                <i class="fas fa-users"></i> {{ standing.active_members }} Active Members
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Team Stats -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <div class="stat-label">Total Points</div>
+                                <div class="stat-value text-primary">{{ standing.total_team_points }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <div class="stat-label">Avg/Member</div>
+                                <div class="stat-value text-info">{{ standing.average_points_per_member|floatformat:1 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <div class="stat-label">Perfect Weeks</div>
+                                <div class="stat-value text-success">{{ standing.total_perfect_weeks }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <div class="stat-label">Participation</div>
+                                <div class="stat-value text-warning">{{ standing.participation_rate|floatformat:0 }}%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View Team Button -->
+                    <div class="mt-3">
+                        <a href="{% url 'leaderboard' %}?team={{ standing.team.id }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-list"></i> View Team Standings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No team standings available yet.</strong>
+        Team standings will appear after the first week is scored.
+    </div>
+    {% endif %}
+
+    <!-- Legend -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fas fa-info-circle"></i> Stat Definitions
+            </h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Total Points:</strong> Sum of all member points (1 pt per correct pick)</li>
+                        <li><strong>Avg/Member:</strong> Average points per active member</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Perfect Weeks:</strong> Total 4/4 weeks across all members</li>
+                        <li><strong>Participation:</strong> % of members who play each week</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4 mb-4">
+        <a href="{% url 'leaderboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to My Team Leaderboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add any JavaScript for interactive features here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Highlight user's teams
+        const userTeamCards = document.querySelectorAll('.user-team');
+        userTeamCards.forEach(card => {
+            card.style.borderLeftWidth = '5px';
+        });
+    });
+</script>
+{% endblock %}

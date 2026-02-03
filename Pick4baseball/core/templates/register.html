@@ -26,7 +26,7 @@
                     Create Your Account
                 </h1>
             </div>
-            
+
             <div class="card-body">
                 <!-- Introduction Text -->
                 <div class="alert alert-info" role="status">
@@ -36,16 +36,24 @@
                     </p>
                 </div>
 
+            <!-- Required Fields Note -->
+            <div class="alert alert-light border mb-4">
+                <small class="text-muted">
+                        <i class="fas fa-asterisk text-danger" style="font-size: 0.6em;"></i>
+                        <strong>Required field</strong> – These fields must be filled out to create your account.
+                </small>
+            </div>
+
                 <!-- Registration Form -->
-                <form method="post" 
-                      action="{% url 'register' %}" 
+                <form method="post"
+                      action="{% url 'register' %}"
                       novalidate
                       aria-label="Registration form">
                     {% csrf_token %}
-                    
+
                     <fieldset>
                         <legend class="visually-hidden">Account Information</legend>
-                        
+
                         <!-- Username Field -->
                         <div class="mb-3">
                             <label for="{{ form.username.id_for_label }}" class="form-label">
@@ -129,8 +137,8 @@
                             </label>
                             <div class="input-group">
                                 {{ form.password1|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password1-help" }}
-                                <button class="btn btn-outline-secondary" 
-                                        type="button" 
+                                <button class="btn btn-outline-secondary"
+                                        type="button"
                                         id="togglePassword1"
                                         aria-label="Toggle password visibility"
                                         aria-pressed="false">
@@ -162,8 +170,8 @@
                             </label>
                             <div class="input-group">
                                 {{ form.password2|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password2-help" }}
-                                <button class="btn btn-outline-secondary" 
-                                        type="button" 
+                                <button class="btn btn-outline-secondary"
+                                        type="button"
                                         id="togglePassword2"
                                         aria-label="Toggle password confirmation visibility"
                                         aria-pressed="false">
@@ -183,13 +191,24 @@
                             {% endif %}
                         </div>
 
+                        <div class="form-check mb-3">
+                            {{ form.agree_to_terms }}
+                            <label class="form-check-label" for="{{ form.agree_to_terms.id_for_label }}">
+                                I agree to the
+                                <a href="{% url 'terms' %}" target="_blank">Terms of Service</a>
+                                and
+                                <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>.
+                            </label>
+                        </div>
+
+
                         <!-- Terms Acceptance (if you have terms) -->
                         <!-- Uncomment this section if you have terms of service
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="acceptTerms" 
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="acceptTerms"
                                        required
                                        aria-required="true"
                                        aria-describedby="terms-help">
@@ -225,7 +244,7 @@
                     <div class="text-center">
                         <hr class="my-3">
                         <p class="mb-0">
-                            Already have an account? 
+                            Already have an account?
                             <a href="{% url 'login' %}" class="fw-bold">
                                 Login here
                                 <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -255,111 +274,111 @@
     .card {
         border: none;
     }
-    
+
     .card-header {
         border-bottom: 3px solid #198754;
     }
-    
+
     /* Form Field Styling */
     .form-control {
         border: 2px solid #ced4da;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    
+
     .form-control:hover {
         border-color: #198754;
     }
-    
+
     .form-control:focus {
         border-color: #198754;
         box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
     }
-    
+
     /* Error State Styling */
     .form-control.is-invalid,
     .form-control:invalid {
         border-color: #dc3545;
     }
-    
+
     .form-control.is-invalid:focus {
         box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
     }
-    
+
     /* Password Requirements List */
     #password1-help ul {
         font-size: 0.875rem;
     }
-    
+
     #password1-help ul li {
         margin-bottom: 0.25rem;
     }
-    
+
     /* Password Toggle Button */
     .input-group .btn-outline-secondary {
         border: 2px solid #ced4da;
         border-left: none;
     }
-    
+
     .input-group .btn-outline-secondary:hover {
         background-color: #f8f9fa;
         border-color: #198754;
     }
-    
+
     .input-group .btn-outline-secondary:focus {
         box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
         border-color: #198754;
     }
-    
+
     /* Required Indicator */
     .required-indicator {
         color: #dc3545;
         font-weight: bold;
     }
-    
+
     /* Button Hover Effect */
     .btn-success {
         transition: all 0.3s ease;
     }
-    
+
     .btn-success:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
     }
-    
+
     .btn-success:active {
         transform: translateY(0);
     }
-    
+
     /* Link Styling */
     a {
         transition: color 0.2s ease;
     }
-    
+
     /* Form Check Styling */
     .form-check-input:focus {
         border-color: #198754;
         box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
     }
-    
+
     /* Alert Styling */
     .alert {
         border-left: 4px solid;
     }
-    
+
     .alert-info {
         border-left-color: #0dcaf0;
     }
-    
+
     .alert-danger {
         border-left-color: #dc3545;
     }
-    
+
     /* Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
         .btn-success:hover {
             transform: none;
         }
-        
+
         .form-control,
         a {
             transition: none;
@@ -374,16 +393,16 @@
     // Enhanced form validation and accessibility
     (function() {
         'use strict';
-        
+
         const registerForm = document.querySelector('form[aria-label="Registration form"]');
-        
+
         if (registerForm) {
             // Get form fields
             const usernameField = document.getElementById('{{ form.username.id_for_label }}');
             const emailField = document.getElementById('{{ form.email.id_for_label }}');
             const password1Field = document.getElementById('{{ form.password1.id_for_label }}');
             const password2Field = document.getElementById('{{ form.password2.id_for_label }}');
-            
+
             // Mark fields as invalid if they have errors
             {% if form.username.errors %}
             if (usernameField) {
@@ -392,7 +411,7 @@
                 usernameField.classList.add('is-invalid');
             }
             {% endif %}
-            
+
             {% if form.email.errors %}
             if (emailField) {
                 emailField.setAttribute('aria-invalid', 'true');
@@ -400,7 +419,7 @@
                 emailField.classList.add('is-invalid');
             }
             {% endif %}
-            
+
             {% if form.password1.errors %}
             if (password1Field) {
                 password1Field.setAttribute('aria-invalid', 'true');
@@ -408,7 +427,7 @@
                 password1Field.classList.add('is-invalid');
             }
             {% endif %}
-            
+
             {% if form.password2.errors %}
             if (password2Field) {
                 password2Field.setAttribute('aria-invalid', 'true');
@@ -416,36 +435,36 @@
                 password2Field.classList.add('is-invalid');
             }
             {% endif %}
-            
+
             // Password visibility toggle
             setupPasswordToggle('togglePassword1', '{{ form.password1.id_for_label }}');
             setupPasswordToggle('togglePassword2', '{{ form.password2.id_for_label }}');
-            
+
             function setupPasswordToggle(buttonId, fieldId) {
                 const toggleButton = document.getElementById(buttonId);
                 const passwordField = document.getElementById(fieldId);
-                
+
                 if (toggleButton && passwordField) {
                     toggleButton.addEventListener('click', function() {
                         const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
                         passwordField.setAttribute('type', type);
-                        
+
                         // Update button state
                         const isPressed = type === 'text';
                         toggleButton.setAttribute('aria-pressed', isPressed);
-                        
+
                         // Update icon
                         const icon = toggleButton.querySelector('i');
                         if (icon) {
                             icon.className = isPressed ? 'fas fa-eye-slash' : 'fas fa-eye';
                         }
-                        
+
                         // Announce to screen readers
                         announceToScreenReader(isPressed ? 'Password visible' : 'Password hidden');
                     });
                 }
             }
-            
+
             // Password match validation
             if (password2Field) {
                 password2Field.addEventListener('blur', function() {
@@ -461,15 +480,15 @@
                     }
                 });
             }
-            
+
             // Form submission handling
             registerForm.addEventListener('submit', function(e) {
                 const submitButton = registerForm.querySelector('button[type="submit"]');
-                
+
                 // Basic validation
                 let isValid = true;
                 const requiredFields = [usernameField, emailField, password1Field, password2Field];
-                
+
                 requiredFields.forEach(field => {
                     if (field && !field.value.trim()) {
                         field.setAttribute('aria-invalid', 'true');
@@ -477,28 +496,28 @@
                         isValid = false;
                     }
                 });
-                
+
                 // Check password match
                 if (password1Field.value !== password2Field.value) {
                     password2Field.setAttribute('aria-invalid', 'true');
                     password2Field.classList.add('is-invalid');
                     isValid = false;
                 }
-                
+
                 if (!isValid) {
                     e.preventDefault();
-                    
+
                     // Focus first invalid field
                     const firstInvalid = registerForm.querySelector('[aria-invalid="true"]');
                     if (firstInvalid) {
                         firstInvalid.focus();
                     }
-                    
+
                     // Announce error to screen readers
                     announceToScreenReader('Please correct the errors in the form');
                     return false;
                 }
-                
+
                 // Disable submit button and show loading state
                 if (submitButton) {
                     submitButton.disabled = true;
@@ -506,7 +525,7 @@
                     submitButton.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span> Creating account...';
                 }
             });
-            
+
             // Clear invalid state on input
             const allFields = registerForm.querySelectorAll('.form-control');
             allFields.forEach(field => {
@@ -518,7 +537,7 @@
                 });
             });
         }
-        
+
         // Screen reader announcements
         function announceToScreenReader(message) {
             const announcement = document.createElement('div');
@@ -527,12 +546,12 @@
             announcement.classList.add('visually-hidden');
             announcement.textContent = message;
             document.body.appendChild(announcement);
-            
+
             setTimeout(function() {
                 document.body.removeChild(announcement);
             }, 1000);
         }
-        
+
         // Auto-focus on first error field
         {% if form.errors %}
         const firstError = document.querySelector('[aria-invalid="true"]');

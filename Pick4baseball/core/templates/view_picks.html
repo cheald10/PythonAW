@@ -1,49 +1,168 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 
-{% block title %}My Picks - PICK 4 Baseball{% endblock %}
+{% block title %}My Picks - Baseball Pick 4{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container mt-4">
     <div class="row">
-        <div class="col-12 col-md-8 offset-md-2">
-            
-            <!-- Simple Header -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="mb-0">
-                        <i class="fas fa-list me-2"></i>
-                        My Picks
-                    </h2>
-                </div>
-                <div class="card-body">
-                    <p class="mb-0">Your picks for the current week will display here.</p>
-                </div>
-            </div>
-
-            <!-- Coming Soon Message -->
-            <div class="alert alert-info">
-                <h4 class="alert-heading">
-                    <i class="fas fa-hourglass-half me-2"></i>
-                    Coming Soon!
-                </h4>
-                <p class="mb-0">
-                    This page will show your submitted picks with player details and results.
-                </p>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="d-grid gap-2">
-                <a href="{% url 'home' %}" class="btn btn-primary">
-                    <i class="fas fa-home me-2"></i>
-                    Back to Home
-                </a>
-                <a href="{% url 'make_picks' %}" class="btn btn-outline-primary">
-                    <i class="fas fa-edit me-2"></i>
-                    Make/Edit Picks
-                </a>
-            </div>
-
+        <div class="col-12">
+            <h1>My Picks</h1>
+            <p class="lead">Week {{ week.week_number }} - {{ week.season_year }}</p>
         </div>
     </div>
+
+    {% if week %}
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clipboard-list"></i>
+                            Your Weekly Picks
+                        </h5>
+                        <span class="badge bg-light text-dark">
+                            Deadline: {{ week.deadline_utc|date:"M d, g:i A" }} UTC
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if picks %}
+                        {% for pick in picks %}
+                        <div class="card mb-3 {% if pick.category.code == '2B' %}border-primary{% elif pick.category.code == 'HR' %}border-danger{% elif pick.category.code == 'SWP' %}border-success{% else %}border-info{% endif %}">
+                            <div class="card-header {% if pick.category.code == '2B' %}bg-primary{% elif pick.category.code == 'HR' %}bg-danger{% elif pick.category.code == 'SWP' %}bg-success{% else %}bg-info{% endif %} text-white">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="mb-0">
+                                            {% if pick.category.code == '2B' %}
+                                                <i class="fas fa-baseball-ball"></i>
+                                            {% elif pick.category.code == 'HR' %}
+                                                <i class="fas fa-rocket"></i>
+                                            {% elif pick.category.code == 'SWP' %}
+                                                <i class="fas fa-trophy"></i>
+                                            {% else %}
+                                                <i class="fas fa-shield-alt"></i>
+                                            {% endif %}
+                                            {{ pick.category.name }} ({{ pick.category.code }})
+                                        </h5>
+                                        <small>{{ pick.category.description }}</small>
+                                    </div>
+                                    <div class="col-md-4 text-md-end">
+                                        {% if pick.result_status == 'hit' %}
+                                            <span class="badge bg-success fs-6">
+                                                <i class="fas fa-check-circle"></i> HIT
+                                            </span>
+                                        {% elif pick.result_status == 'miss' %}
+                                            <span class="badge bg-danger fs-6">
+                                                <i class="fas fa-times-circle"></i> MISS
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark fs-6">
+                                                <i class="fas fa-clock"></i> PENDING
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h4 class="mb-1">{{ pick.player.full_name }}</h4>
+                                        <p class="text-muted mb-2">
+                                            <i class="fas fa-baseball"></i> {{ pick.player.team_name }}
+                                            {% if pick.player.position %}
+                                                | Position: {{ pick.player.position }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6 text-md-end">
+                                        <p class="mb-1">
+                                            <strong>Submitted:</strong> {{ pick.submitted_at|date:"M d, Y g:i A" }}
+                                        </p>
+                                        {% if pick.points_awarded %}
+                                        <p class="mb-0">
+                                            <strong>Points:</strong> 
+                                            <span class="badge bg-success">{{ pick.points_awarded }}</span>
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Summary Card -->
+                        <div class="card bg-light mt-4">
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3 mb-2">
+                                        <h3 class="text-primary mb-0">{{ picks.count }}</h3>
+                                        <small class="text-muted">Total Picks</small>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <h3 class="text-success mb-0">
+                                            {{ picks|length|add:0 }}
+                                            {% comment %}This will be updated with actual hit count{% endcomment %}
+                                        </h3>
+                                        <small class="text-muted">Hits</small>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <h3 class="text-danger mb-0">0</h3>
+                                        <small class="text-muted">Misses</small>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <h3 class="text-warning mb-0">{{ picks.count }}</h3>
+                                        <small class="text-muted">Pending</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-info-circle"></i> No Picks Yet</h5>
+                            <p class="mb-0">You haven't made any picks for this week yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <a href="{% url 'home' %}" class="btn btn-secondary w-100">
+                                <i class="fas fa-home"></i> Back to Home
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            {% if picks.count > 0 %}
+                                <!-- Check if deadline hasn't passed -->
+                                <a href="{% url 'make_picks' %}" class="btn btn-primary w-100">
+                                    <i class="fas fa-edit"></i> Edit My Picks
+                                </a>
+                            {% else %}
+                                <a href="{% url 'make_picks' %}" class="btn btn-primary w-100">
+                                    <i class="fas fa-plus-circle"></i> Make Picks Now
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h4><i class="fas fa-exclamation-triangle"></i> No Active Week</h4>
+                <p>There is currently no active game week.</p>
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Go to Home
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

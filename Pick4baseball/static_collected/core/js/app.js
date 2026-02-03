@@ -1,0 +1,1 @@
+console.log("Baseball Pick 4 app loaded.");

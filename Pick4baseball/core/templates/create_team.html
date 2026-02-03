@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Team - Baseball Pick 4{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Main Card -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-users"></i> Create New Team
+                    </h3>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Introduction -->
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> Start Your Own Team!
+                        </h5>
+                        <p class="mb-0">
+                            Create a team, get a unique join code, and invite your friends to play together. 
+                            You'll be the team captain and can manage everything.
+                        </p>
+                    </div>
+                    
+                    <!-- Required Fields Note -->
+                    <div class="alert alert-light border mb-4">
+                        <small class="text-muted">
+                            <i class="fas fa-asterisk text-danger" style="font-size: 0.6em;"></i> 
+                            <strong>Required field</strong> - These fields must be filled out to create your team.
+                        </small>
+                    </div>
+                    
+                    <!-- Form -->
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Team Name -->
+                        <div class="mb-4">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                                {{ form.name.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors.0 }}
+                                </div>
+                            {% else %}
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb"></i> {{ form.name.help_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                {{ form.description.label }}
+                                <span class="text-muted small">(Optional)</span>
+                            </label>
+                            {{ form.description }}
+                            
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% else %}
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb"></i> {{ form.description.help_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Weekly Fee -->
+                        <div class="mb-4">
+                            <label for="{{ form.weekly_fee.id_for_label }}" class="form-label fw-bold">
+                                {{ form.weekly_fee.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.weekly_fee }}
+                            
+                            {% if form.weekly_fee.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.weekly_fee.errors.0 }}
+                                </div>
+                            {% else %}
+                                <div class="form-text">
+                                    <i class="fas fa-dollar-sign"></i> {{ form.weekly_fee.help_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- What Happens Next Info Box -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-magic text-primary"></i> What Happens Next?
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li>✅ You'll become the team captain</li>
+                                    <li>🔑 A unique join code will be generated</li>
+                                    <li>📤 Share the code with friends to invite them</li>
+                                    <li>⚾ Members can start making picks right away</li>
+                                    <li>💰 Manage payments and track team performance</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle"></i> Create Team
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Footer -->
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt"></i> 
+                        Your team information is private and only visible to team members.
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Additional Help Section -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-question-circle text-info"></i> Frequently Asked Questions
+                    </h5>
+                    
+                    <div class="accordion" id="faqAccordion">
+                        <!-- FAQ 1 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How do I invite people to my team?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    After creating your team, you'll receive a unique join code. 
+                                    Share this code with your friends, and they can join by entering 
+                                    it on the "Join Team" page.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- FAQ 2 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    What does the weekly fee do?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    The weekly fee is the amount each team member contributes to the prize pool. 
+                                    At the end of each week, the winner(s) receive payouts based on the total pool.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- FAQ 3 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Can I be on multiple teams?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes! You can create your own team and also join other teams. 
+                                    Each team is independent with its own picks and scoring.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- FAQ 4 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    Can I change my team name later?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes, as the team captain you can edit your team name and description 
+                                    from the team dashboard at any time.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap validation classes
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    // Add validation on submit
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (input.hasAttribute('required') && !input.value.trim()) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill out all required fields.');
+        }
+    });
+    
+    // Remove validation class on input
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

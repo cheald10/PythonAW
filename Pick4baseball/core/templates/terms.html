@@ -3,9 +3,113 @@
 {% block title %}Terms & Conditions - Baseball Pick 4{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1>Terms & Conditions</h1>
-    <p>Terms and conditions content coming soon...</p>
-    <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+<div class="container mt-5" style="max-width: 900px;">
+
+    <h1 class="mb-4 fw-bold">Terms of Service</h1>
+    <p class="text-muted">Last Updated: {{ today }}</p>
+
+    <h3 class="mt-4 fw-bold">1. Overview</h3>
+    <p>
+        Pick 4 Baseball (“the Game”, “we”, “us”) is a weekly, skill‑based baseball prediction contest.
+        By creating an account, submitting picks, or paying an entry fee, you agree to these Terms of Service.
+        If you do not agree, do not use the Game.
+    </p>
+
+    <h3 class="mt-4 fw-bold">2. Eligibility</h3>
+    <p>
+        To participate, you must be 18 years or older, a U.S. resident, and not reside in states that restrict
+        paid fantasy contests (including but not limited to: Washington, Idaho, Nevada). Only one account per
+        person is permitted. We may request proof of eligibility.
+    </p>
+
+    <h3 class="mt-4 fw-bold">3. Game of Skill</h3>
+    <p>
+        Pick 4 Baseball is a game of skill. Outcomes depend on player knowledge, statistical understanding,
+        and strategy in selecting weekly picks.
+    </p>
+
+    <h3 class="mt-4 fw-bold">4. Entry Fees & Prize Pools</h3>
+    <p>
+        Players pay either $5 or $10 per week to participate. Entry fees are allocated as follows:
+    </p>
+    <ul>
+        <li><strong>80%</strong> → Weekly Prize Pool</li>
+        <li><strong>10%</strong> → End‑of‑Year Prize Pool</li>
+        <li><strong>10%</strong> → Game maintenance, hosting, development, and administrative costs</li>
+    </ul>
+    <p>
+        We do not participate in the prize pool. All allocations are transparent and fixed.
+    </p>
+
+    <h3 class="mt-4 fw-bold">5. Payouts & Rollover Rules</h3>
+    <p>
+        If there is at least one weekly winner, the Weekly Prize Pool is paid out according to the published rules.
+        If there is no weekly winner:
+    </p>
+    <ul>
+        <li><strong>75%</strong> of that week’s prize pool rolls over to the next week</li>
+        <li><strong>25%</strong> is added to the End‑of‑Year Prize Pool</li>
+    </ul>
+    <p>
+        This rollover continues until a weekly winner is determined. We may correct scoring errors or adjust results
+        if MLB statistics are updated or corrected.
+    </p>
+
+    <h3 class="mt-4 fw-bold">6. Refund Policy</h3>
+    <p>
+        Entry fees are non‑refundable except in limited circumstances. Refunds will only be issued when:
+    </p>
+    <ul>
+        <li>A charge is shown to be a duplicate</li>
+        <li>A technical or system error caused an incorrect charge</li>
+        <li>An issue is investigated and proven to require a refund</li>
+    </ul>
+    <p>
+        Refunds are not provided for user mistakes, missed pick submissions, poor performance, disagreements with scoring,
+        or MLB schedule changes.
+    </p>
+    <p>
+        If the <strong>Pick4Baseball game itself</strong> (not MLB games) is suspended, paused, or permanently discontinued,
+        refunds may be issued at our discretion for unplayed weeks.
+    </p>
+
+    <h3 class="mt-4 fw-bold">7. User Conduct</h3>
+    <p>
+        You agree not to create multiple accounts, collude with other players, exploit bugs, harass users, manipulate scoring,
+        or engage in chargeback fraud. We may suspend or terminate accounts at our discretion.
+    </p>
+
+    <h3 class="mt-4 fw-bold">8. Game Changes</h3>
+    <p>
+        We may modify, pause, or discontinue the Pick4Baseball game at any time, including rule adjustments, scoring changes,
+        maintenance, season resets, or cancellation of the Game. These changes do not refer to MLB games or MLB scheduling.
+    </p>
+
+    <h3 class="mt-4 fw-bold">9. Limitation of Liability</h3>
+    <p>
+        We are not liable for outages, delays, scoring errors, data loss, or third‑party failures. Your use of the Game is at
+        your own risk. Our total liability shall not exceed the amount you paid in entry fees in the last 30 days.
+    </p>
+
+    <h3 class="mt-4 fw-bold">10. Privacy</h3>
+    <p>
+        We collect and store your email, name, picks, scores, and payment confirmations. We do not sell or share your data.
+        See our Privacy Policy for full details.
+    </p>
+
+    <h3 class="mt-4 fw-bold">11. Dispute Resolution</h3>
+    <p>
+        All disputes must be submitted within 7 days of the scoring week ending. Our decisions regarding scoring, eligibility,
+        and payouts are final.
+    </p>
+
+    <h3 class="mt-4 fw-bold">12. Acceptance</h3>
+    <p>
+        By creating an account, you acknowledge that you have read and agree to these Terms, understand the nature of the Game,
+        are legally eligible to participate, and accept the allocation of entry fees and prize pools.
+    </p>
+
+    <a href="{% url 'home' %}" class="btn btn-primary mt-4">Back to Home</a>
+
 </div>
 {% endblock %}

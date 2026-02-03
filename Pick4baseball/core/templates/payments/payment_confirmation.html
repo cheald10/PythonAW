@@ -1,0 +1,578 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Receipt - PICK 4 Baseball Pick em'{% endblock %}
+
+{% block extra_css %}
+<style>
+    .receipt-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .receipt-header {
+        background: linear-gradient(135deg, #00843D 0%, #006D33 100%);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 0.75rem 0.75rem 0 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .receipt-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.1); opacity: 0.5; }
+    }
+    
+    .receipt-header i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: checkmark 0.6s ease-in-out;
+    }
+    
+    @keyframes checkmark {
+        0% { transform: scale(0) rotate(0deg); }
+        50% { transform: scale(1.2) rotate(180deg); }
+        100% { transform: scale(1) rotate(360deg); }
+    }
+    
+    .receipt-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .receipt-header p {
+        font-size: 1.125rem;
+        margin-bottom: 0;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .receipt-body {
+        background: white;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 0 0 0.75rem 0.75rem;
+    }
+    
+    .confirmation-number {
+        text-align: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .confirmation-number .label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .confirmation-number .number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #002D62;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .detail-section {
+        margin-bottom: 2rem;
+    }
+    
+    .detail-section h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #002D62;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #C8102E;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-label {
+        font-weight: 600;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .detail-label i {
+        color: #6c757d;
+        width: 20px;
+    }
+    
+    .detail-value {
+        font-weight: 500;
+        color: #212529;
+        text-align: right;
+    }
+    
+    .amount-highlight {
+        background: linear-gradient(135deg, #C8102E 0%, #A01024 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin: 2rem 0;
+        text-align: center;
+    }
+    
+    .amount-highlight .label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+    
+    .amount-highlight .amount {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-failed {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.875rem 1.5rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .action-buttons .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-print {
+        background: linear-gradient(135deg, #002D62 0%, #0051BA 100%);
+        color: white;
+        border: none;
+    }
+    
+    .btn-print:hover {
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 45, 98, 0.3);
+    }
+    
+    .btn-email {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+    }
+    
+    .btn-email:hover {
+        color: white;
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+    
+    .transaction-details {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-top: 2rem;
+    }
+    
+    .transaction-details h4 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #495057;
+        margin-bottom: 1rem;
+    }
+    
+    .transaction-details code {
+        background: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        display: block;
+        font-size: 0.875rem;
+        color: #002D62;
+        border: 1px solid #dee2e6;
+        word-break: break-all;
+    }
+    
+    .help-text {
+        background: #e7f3ff;
+        border-left: 4px solid #0051BA;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-top: 2rem;
+    }
+    
+    .help-text i {
+        color: #0051BA;
+    }
+    
+    .help-text p {
+        margin: 0;
+        color: #004085;
+        font-size: 0.875rem;
+    }
+    
+    /* Print Styles */
+    @media print {
+        body {
+            background: white;
+        }
+        
+        .navbar, .footer, .action-buttons, .help-text, .breadcrumbs {
+            display: none !important;
+        }
+        
+        .receipt-container {
+            max-width: 100%;
+            box-shadow: none;
+        }
+        
+        .receipt-body {
+            box-shadow: none;
+        }
+        
+        .receipt-header {
+            background: #00843D !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .amount-highlight {
+            background: #C8102E !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .receipt-header {
+            padding: 2rem 1rem;
+        }
+        
+        .receipt-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .receipt-body {
+            padding: 1.5rem;
+        }
+        
+        .amount-highlight .amount {
+            font-size: 2rem;
+        }
+        
+        .confirmation-number .number {
+            font-size: 1.25rem;
+        }
+        
+        .detail-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .detail-value {
+            text-align: left;
+        }
+        
+        .action-buttons {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-container">
+    <!-- Receipt Header -->
+    <div class="receipt-header">
+        <i class="fas fa-check-circle" aria-hidden="true"></i>
+        <h1>Payment Confirmed!</h1>
+        <p>Your payment has been successfully processed</p>
+    </div>
+    
+    <!-- Receipt Body -->
+    <div class="receipt-body">
+        <!-- Confirmation Number -->
+        <div class="confirmation-number">
+            <div class="label">Confirmation Number</div>
+            <div class="number">#{{ payment.id|stringformat:"06d" }}</div>
+        </div>
+        
+        <!-- Payment Details -->
+        <div class="detail-section">
+            <h3><i class="fas fa-file-invoice-dollar"></i> Payment Details</h3>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-calendar" aria-hidden="true"></i>
+                    Payment Date
+                </span>
+                <span class="detail-value">
+                    {{ payment.payment_date|date:"F d, Y" }} at {{ payment.payment_date|time:"g:i A" }}
+                </span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-users" aria-hidden="true"></i>
+                    Team
+                </span>
+                <span class="detail-value">{{ payment.team.name }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-calendar-week" aria-hidden="true"></i>
+                    Week
+                </span>
+                <span class="detail-value">Week {{ payment.week.week_number }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-credit-card" aria-hidden="true"></i>
+                    Payment Method
+                </span>
+                <span class="detail-value">
+                    {% if payment.payment_method == 'stripe' %}
+                        <i class="fab fa-cc-stripe text-primary"></i> Credit Card (Stripe)
+                    {% elif payment.payment_method == 'manual' %}
+                        <i class="fas fa-money-bill text-success"></i> Manual Payment
+                    {% else %}
+                        {{ payment.get_payment_method_display }}
+                    {% endif %}
+                </span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    Status
+                </span>
+                <span class="detail-value">
+                    {% if payment.payment_status == 'completed' %}
+                        <span class="status-badge status-completed">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </span>
+                    {% elif payment.payment_status == 'pending' %}
+                        <span class="status-badge status-pending">
+                            <i class="fas fa-clock"></i> Pending
+                        </span>
+                    {% elif payment.payment_status == 'failed' %}
+                        <span class="status-badge status-failed">
+                            <i class="fas fa-times-circle"></i> Failed
+                        </span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Amount Highlight -->
+        <div class="amount-highlight">
+            <div class="label">Amount Paid</div>
+            <div class="amount">${{ payment.amount }}</div>
+        </div>
+        
+        <!-- Payer Details -->
+        <div class="detail-section">
+            <h3><i class="fas fa-user"></i> Payer Information</h3>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                    Name
+                </span>
+                <span class="detail-value">
+                    {{ payment.user.get_full_name|default:payment.user.username }}
+                </span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                    Email
+                </span>
+                <span class="detail-value">{{ payment.user.email }}</span>
+            </div>
+        </div>
+        
+        <!-- Transaction Details -->
+        {% if payment.stripe_charge_id or payment.stripe_payment_intent_id %}
+        <div class="transaction-details">
+            <h4>Transaction Information</h4>
+            
+            {% if payment.stripe_charge_id %}
+            <div class="mb-2">
+                <small class="text-muted">Stripe Charge ID:</small>
+                <code>{{ payment.stripe_charge_id }}</code>
+            </div>
+            {% endif %}
+            
+            {% if payment.stripe_payment_intent_id %}
+            <div>
+                <small class="text-muted">Payment Intent ID:</small>
+                <code>{{ payment.stripe_payment_intent_id }}</code>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Help Text -->
+        <div class="help-text">
+            <p>
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <strong>Need help?</strong> If you have any questions about this payment, please contact support 
+                with your confirmation number: <strong>#{{ payment.id|stringformat:"06d" }}</strong>
+            </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button type="button" class="btn btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Receipt
+            </button>
+            
+            {% if payment.user.email %}
+            <button type="button" class="btn btn-email" onclick="emailReceipt()">
+                <i class="fas fa-envelope"></i> Email Receipt
+            </button>
+            {% endif %}
+            
+            <a href="{% url 'payment_history' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-history"></i> View History
+            </a>
+            
+            <a href="{% url 'payment_portal' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Payments
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function emailReceipt() {
+        // Show loading state
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        
+        // In production, this would make an AJAX call to send the email
+        // For now, we'll just simulate it
+        fetch('/api/payments/email-receipt/{{ payment.id }}/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                btn.classList.remove('btn-email');
+                btn.classList.add('btn-success');
+                
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    Receipt has been sent to <strong>{{ payment.user.email }}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                btn.closest('.action-buttons').insertAdjacentElement('afterend', alertDiv);
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-email');
+                }, 3000);
+            } else {
+                throw new Error('Failed to send email');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = '<i class="fas fa-times"></i> Failed';
+            btn.classList.remove('btn-email');
+            btn.classList.add('btn-danger');
+            
+            // Show error message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                Failed to send receipt. Please try again.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            btn.closest('.action-buttons').insertAdjacentElement('afterend', alertDiv);
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-email');
+            }, 3000);
+        });
+    }
+</script>
+{% endblock %}

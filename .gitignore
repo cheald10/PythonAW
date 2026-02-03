@@ -16,8 +16,11 @@ env/
 *.pyc
 db.sqlite3
 media/
+
+# Ignore only collected static files
 staticfiles/
-static/
+static_collected/
+
 
 # PythonAnywhere logs
 /home/*/logs/

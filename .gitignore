@@ -21,6 +21,11 @@ media/
 staticfiles/
 static_collected/
 
+# CRITICAL: Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.env
 
 # PythonAnywhere logs
 /home/*/logs/

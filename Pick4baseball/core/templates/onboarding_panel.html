@@ -1,0 +1,58 @@
+<div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
+    <div class="card-body py-4">
+        <h2 class="fw-bold mb-3">Your First Inning</h2>
+        <p class="text-muted mb-4">
+            Welcome to Pick 4 Baseball. Choose how you want to get started.
+        </p>
+
+        <div class="row g-4">
+
+            <!-- Learn to Play -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-semibold mb-2">Learn to Play</h5>
+                        <p class="text-muted small mb-3">
+                            Take a deeper dive into how Pick 4 works, scoring, and weekly strategy.
+                        </p>
+                    </div>
+                    <a href="{% url 'how_to_play' %}" class="btn btn-primary w-100">
+                        View Full Rules
+                    </a>
+                </div>
+            </div>
+
+            <!-- Create a Team -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-semibold mb-2">Create a Team</h5>
+                        <p class="text-muted small mb-3">
+                            Start your own team, set your weekly entry fee, and invite players to join.
+                        </p>
+                    </div>
+                    <a href="{% url 'create_team' %}" class="btn btn-success w-100">
+                        Create a Team
+                    </a>
+                </div>
+            </div>
+
+            <!-- Join with Invite Code -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-semibold mb-2">Join a Team</h5>
+                        <p class="text-muted small mb-3">
+                            If a team captain invited you, enter your invite code to join instantly.
+                        </p>
+                    </div>
+                    <!-- FIX: Changed from 'enter_invite_code' to 'join_team' -->
+                    <a href="{% url 'join_team' %}" class="btn btn-outline-primary w-100">
+                        Enter Invite Code
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

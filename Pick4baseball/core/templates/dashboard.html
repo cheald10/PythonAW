@@ -5,7 +5,14 @@
 
 {% block meta_description %}View your weekly picks, stats, and team performance on your Baseball Pick 4 dashboard.{% endblock %}
 
-{% block content %}
+{% block content %}.
+
+<!-- NEW: Onboarding Panel for New Users -->
+
+{% if show_onboarding %}
+    {% include "onboarding_panel.html" %}
+{% endif %}
+
 <!-- WEEK SUMMARY CARD -->
 <section class="card mb-4">
     <div class="card-body">

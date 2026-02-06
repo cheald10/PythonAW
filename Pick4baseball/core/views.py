@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from django.contrib import messages
+from core.models import UserProfile
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import send_mail
@@ -27,7 +28,14 @@ from .models import (
     Week, MLBPlayer, Pick, PickCategory, Team, TeamMember, UserProfile,
     WeeklyPayment, WeeklyPrizePool
 )
-from .forms import RegistrationForm, TeamCreationForm, JoinTeamForm
+from .forms import (
+    RegistrationForm,
+    TeamCreationForm,
+    JoinTeamForm,
+    ProfilePictureForm,
+    PayoutSettingsForm,
+    AccountInfoForm
+)
 
 import secrets
 import stripe
@@ -160,7 +168,7 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            next_url = request.POST.get('next') or 'home'
+            next_url = request.POST.get('next') or 'dashboard'
             return redirect(next_url)
     else:
         form = AuthenticationForm()
@@ -240,16 +248,93 @@ def home(request):
     return render(request, 'home.html', context)
 
 @login_required
+def account_settings(request):
+    """
+    Account settings page with profile picture, payout preferences, etc.
+    """
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        # Determine which form was submitted
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'profile_picture':
+            form = ProfilePictureForm(
+                request.POST,
+                request.FILES,
+                instance=profile
+            )
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Profile picture updated successfully!')
+                return redirect('account_settings')
+            else:
+                messages.error(request, 'Error updating profile picture.')
+
+        elif form_type == 'payout_settings':
+            form = PayoutSettingsForm(request.POST, instance=profile)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Payout settings updated successfully!')
+                return redirect('account_settings')
+            else:
+                messages.error(request, 'Error updating payout settings.')
+
+        elif form_type == 'account_info':
+            form = AccountInfoForm(request.POST, instance=profile)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Account information updated successfully!')
+                return redirect('account_settings')
+            else:
+                messages.error(request, 'Error updating account information.')
+
+    # Create forms for GET request
+    picture_form = ProfilePictureForm(instance=profile)
+    payout_form = PayoutSettingsForm(instance=profile)
+    account_form = AccountInfoForm(instance=profile)
+
+    context = {
+        'profile': profile,
+        'picture_form': picture_form,
+        'payout_form': payout_form,
+        'account_form': account_form,
+    }
+
+    return render(request, 'account_settings.html', context)
+
+@login_required
 def team_detail(request, team_id):
     from core.models import Team, TeamMember
 
     team = get_object_or_404(Team, id=team_id)
-    members = TeamMember.objects.filter(team=team, status='active').select_related('user')
+    # Check if user is a member
+    is_member = TeamMember.objects.filter(
+        team=team,
+        user=request.user
+    ).exists()
 
-    context = {'team': team, 'members': members}
+    # Get user's membership info
+    membership = None
+    if is_member:
+        membership = TeamMember.objects.get(team=team, user=request.user)
+
+    # Get all team members
+    members = TeamMember.objects.filter(team=team).select_related('user')
+
+    # Check if user is captain
+    is_captain = team.captain == request.user
+
+    context = {
+        'team': team,
+        'is_member': is_member,
+        'is_captain': is_captain,
+        'membership': membership,
+        'members': members,
+    }
+
     return render(request, 'team_detail.html', context)
-
-# Add to core/views.py
 
 @login_required
 def my_teams(request):
@@ -267,6 +352,67 @@ def my_teams(request):
     }
 
     return render(request, 'my_teams.html', context)
+
+    # ADD THIS TO core/views.py (after my_teams view)
+
+@login_required
+def join_team(request):
+    """
+    Join an existing team using a join code
+    """
+    if request.method == 'POST':
+        form = JoinTeamForm(request.POST)
+
+        if form.is_valid():
+            join_code = form.cleaned_data['join_code']
+            team = form.cleaned_data['team']
+
+            # Check if user is already a member
+            existing_membership = TeamMember.objects.filter(
+                team=team,
+                user=request.user
+            ).first()
+
+            if existing_membership:
+                messages.warning(
+                    request,
+                    f'You are already a member of "{team.name}"!'
+                )
+                return redirect('team_detail', team_id=team.id)
+
+            # Add user to team
+            try:
+                TeamMember.objects.create(
+                    team=team,
+                    user=request.user,
+                    role='member'
+                )
+
+                messages.success(
+                    request,
+                    f'Successfully joined "{team.name}"! Welcome to the team.'
+                )
+
+                return redirect('team_detail', team_id=team.id)
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f'Error joining team: {str(e)}'
+                )
+                return redirect('join_team')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = JoinTeamForm()
+
+    context = {
+        'form': form,
+    }
+
+    return render(request, 'join_team.html', context)
+
+# Add to core/views.py
 
 @login_required
 def make_picks(request):
@@ -462,13 +608,6 @@ def rules(request):
     """Game rules placeholder"""
     return render(request, 'rules.html')
 
-
-@login_required
-def account_settings(request):
-    """Account settings placeholder"""
-    return render(request, 'account_settings.html')
-
-
 @login_required
 def privacy(request):
     """Privacy policy placeholder"""
@@ -539,130 +678,56 @@ def create_team(request):
 
     return render(request, 'create_team.html', context)
 
-
-@login_required
-def team_detail(request, team_id):
-    """
-    View team details
-    """
-    team = get_object_or_404(Team, id=team_id)
-
-    # Check if user is a member
-    is_member = TeamMember.objects.filter(
-        team=team,
-        user=request.user
-    ).exists()
-
-    # Get user's membership info
-    membership = None
-    if is_member:
-        membership = TeamMember.objects.get(team=team, user=request.user)
-
-    # Get all team members
-    members = TeamMember.objects.filter(team=team).select_related('user')
-
-    # Check if user is captain
-    is_captain = team.captain == request.user
-
-    context = {
-        'team': team,
-        'is_member': is_member,
-        'is_captain': is_captain,
-        'membership': membership,
-        'members': members,
-    }
-
-    return render(request, 'team_detail.html', context)
-
-
-@login_required
-def my_teams(request):
-    """
-    List all teams user is a member of
-    """
-    memberships = TeamMember.objects.filter(
-        user=request.user
-    ).select_related('team').order_by('-joined_at')
-
-    context = {
-        'memberships': memberships,
-    }
-
-    return render(request, 'my_teams.html', context)
-
-    # ADD THIS TO core/views.py (after my_teams view)
-
-@login_required
-def join_team(request):
-    """
-    Join an existing team using a join code
-    """
-    if request.method == 'POST':
-        form = JoinTeamForm(request.POST)
-
-        if form.is_valid():
-            join_code = form.cleaned_data['join_code']
-            team = form.cleaned_data['team']
-
-            # Check if user is already a member
-            existing_membership = TeamMember.objects.filter(
-                team=team,
-                user=request.user
-            ).first()
-
-            if existing_membership:
-                messages.warning(
-                    request,
-                    f'You are already a member of "{team.name}"!'
-                )
-                return redirect('team_detail', team_id=team.id)
-
-            # Add user to team
-            try:
-                TeamMember.objects.create(
-                    team=team,
-                    user=request.user,
-                    role='member'
-                )
-
-                messages.success(
-                    request,
-                    f'Successfully joined "{team.name}"! Welcome to the team.'
-                )
-
-                return redirect('team_detail', team_id=team.id)
-
-            except Exception as e:
-                messages.error(
-                    request,
-                    f'Error joining team: {str(e)}'
-                )
-                return redirect('join_team')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = JoinTeamForm()
-
-    context = {
-        'form': form,
-    }
-
-    return render(request, 'join_team.html', context)
-
 @login_required
 def dashboard(request):
+    from core.models import TeamMember, Week, Pick
+
+    # Check if user is new (not on any team)
+    is_new_user = not TeamMember.objects.filter(user=request.user).exists()
+
+    # Get current week if exists
+    current_week = Week.objects.filter(is_active=True).first()
+
+    # If new user, show onboarding
+    if is_new_user:
+        context = {
+            'show_onboarding': True,
+            'is_new_user': True,
+            'current_week': current_week,
+        }
+        return render(request, 'dashboard.html', context)
+
+    # Existing user - show regular dashboard
+    picks_count = 0
+    total_points = 0
+    correct_picks = 0
+
+    if current_week:
+        picks_count = Pick.objects.filter(
+            user=request.user,
+            week=current_week
+        ).count()
+
+        total_points = Pick.objects.filter(
+            user=request.user,
+            result_status='hit'
+        ).count()
+
+        correct_picks = total_points
+
     context = {
-        'current_week': 1,
-        'deadline': 'Sat 11:00 AM',
-        'picks_count': 0,
-        'total_points': 0,
-        'correct_picks': 0,
+        'show_onboarding': False,
+        'is_new_user': False,
+        'current_week': current_week.week_number if current_week else 1,
+        'deadline': current_week.deadline_display if current_week else 'TBD',
+        'picks_count': picks_count,
+        'total_points': total_points,
+        'correct_picks': correct_picks,
         'streak': 0,
         'rank': '-',
         'teams': [],
     }
     return render(request, 'dashboard.html', context)
-
 
 # ==============================================================================
 # PAYMENT VIEWS - BP4A-8: Secure Payment Submission

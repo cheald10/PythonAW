@@ -27,10 +27,10 @@ class UserProfile(models.Model):
     """Extended user information including payment preferences"""
 
     PAYOUT_METHOD_CHOICES = [
+        ('balance', 'Keep in Account Balance'),
         ('stripe', 'Stripe'),
         ('paypal', 'PayPal'),
         ('venmo', 'Venmo'),
-        ('manual', 'Manual/Cash'),
     ]
 
     user = models.OneToOneField(
@@ -45,6 +45,36 @@ class UserProfile(models.Model):
     )
     phone_number = models.CharField(max_length=20, blank=True, null=True)
 
+    # Account balance system
+    account_balance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text='Current account balance available for payments'
+    )
+    low_balance_threshold = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('15.00'),
+        help_text='Alert user when balance drops below this amount'
+    )
+    low_balance_alert_sent = models.BooleanField(
+        default=False,
+        help_text='Has low balance alert been sent for current balance?'
+    )
+    last_low_balance_alert = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When was the last low balance alert sent?'
+    )
+
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/',
+        blank=True,
+        null=True,
+        help_text='Profile picture (max 5MB)'
+    )
+
     # Payment info
     venmo_username = models.CharField(max_length=100, blank=True, null=True)
     paypal_email = models.EmailField(blank=True, null=True)
@@ -55,16 +85,18 @@ class UserProfile(models.Model):
         default='manual'
     )
 
-    # Lifetime stats
+    # Lifetime statistics
     total_lifetime_winnings = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0.00')
+        default=Decimal('0.00'),
+        help_text='Total amount won over all time (before payouts)'
     )
     total_lifetime_paid = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0.00')
+        default=Decimal('0.00'),
+        help_text='Total amount paid in weekly fees over all time'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -83,6 +115,118 @@ class UserProfile(models.Model):
         """Calculate lifetime profit/loss"""
         return self.total_lifetime_winnings - self.total_lifetime_paid
 
+    @property
+    def profile_picture_url(self):
+        """Get profile picture URL or default avatar"""
+        if self.profile_picture:
+            return self.profile_picture.url
+        return f'https://ui-avatars.com/api/?name={self.user.username}&size=150&background=667eea&color=fff'
+
+
+class AccountTransaction(models.Model):
+    """
+    Complete audit trail of all account balance changes.
+    Tracks deposits (winnings), withdrawals, and payments.
+    """
+
+    TRANSACTION_TYPES = [
+        ('deposit', 'Deposit'),           # Winnings added to balance
+        ('withdrawal', 'Withdrawal'),     # User withdrew funds
+        ('payment', 'Payment'),           # Paid weekly fee from balance
+        ('refund', 'Refund'),             # Payment refunded to balance
+        ('adjustment', 'Admin Adjustment'), # Manual admin adjustment
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='account_transactions'
+    )
+
+    # Transaction details
+    transaction_type = models.CharField(
+        max_length=20,
+        choices=TRANSACTION_TYPES
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+    balance_before = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+    balance_after = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='completed'
+    )
+
+    # Context
+    description = models.CharField(
+        max_length=200,
+        help_text='Human-readable description'
+    )
+    related_payment = models.ForeignKey(
+        'WeeklyPayment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions'
+    )
+    related_payout = models.ForeignKey(
+        'WeeklyPayout',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions'
+    )
+
+    # External references (for withdrawals)
+    stripe_transfer_id = models.CharField(max_length=100, blank=True, null=True)
+    paypal_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    venmo_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+
+    # Admin tracking
+    processed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='processed_transactions',
+        help_text='Admin who processed this transaction (if applicable)'
+    )
+    notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'account_transactions'
+        verbose_name = 'Account Transaction'
+        verbose_name_plural = 'Account Transactions'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['transaction_type', 'status']),
+            models.Index(fields=['related_payment']),
+            models.Index(fields=['related_payout']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.transaction_type} - ${self.amount} ({self.created_at.strftime('%Y-%m-%d')})"
 
 # ==============================================================================
 # TEAM MANAGEMENT

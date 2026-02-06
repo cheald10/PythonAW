@@ -1,293 +1,219 @@
-# core/forms.py
 from django import forms
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import get_user_model
-User = get_user_model()
-from django.core.exceptions import ValidationError
-from .models import Team
+from core.models import UserProfile, Team, TeamMember, Pick, PickCategory, MLBPlayer, Week
 
 
 class RegistrationForm(UserCreationForm):
-    """
-    Custom registration form extending Django's UserCreationForm.
-    Includes additional fields: email, first_name, last_name
-    """
-
-    first_name = forms.CharField(
-        max_length=30,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'John',
-            'class': 'form-control'
-        }),
-        help_text='Required.'
-    )
-
-    last_name = forms.CharField(
-        max_length=30,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Smith',
-            'class': 'form-control'
-        }),
-        help_text='Required.'
-    )
-
+    """User registration form with email"""
     email = forms.EmailField(
-        max_length=254,
         required=True,
         widget=forms.EmailInput(attrs={
-            'placeholder': 'your.email@example.com',
-            'class': 'form-control'
-        }),
-        help_text='Required. Enter a valid email address.'
-    )
-
-    username = forms.CharField(
-        max_length=150,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'baseballfan2025',
-            'class': 'form-control'
-        }),
-        help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'
-    )
-
-    password1 = forms.CharField(
-        label='Password',
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Create a strong password',
             'class': 'form-control',
-            'minlength': '8'
-        }),
-        help_text='Your password must contain at least 8 characters.'
+            'placeholder': 'Email Address'
+        })
     )
-
-    password2 = forms.CharField(
-        label='Confirm Password',
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Re-enter your password',
-            'class': 'form-control',
-            'minlength': '8'
-        }),
-        help_text='Enter the same password as before, for verification.'
-    )
-
-    agree_to_terms = forms.BooleanField(
-        required=True,
-        label="I agree to the Terms of Service and Privacy Policy"
-    )
-
+    
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'agree_to_terms')
+        fields = ['username', 'email', 'password1', 'password2']
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Username'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Password'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Confirm Password'
+        })
 
-    def clean_email(self):
-        """
-        Validate that the email is unique in the system.
-        """
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise ValidationError('A user with this email already exists.')
-        return email
 
-    def clean_username(self):
-        """
-        Validate that the username is unique (case-insensitive).
-        """
-        username = self.cleaned_data.get('username')
-        if User.objects.filter(username__iexact=username).exists():
-            raise ValidationError('This username is already taken.')
-        return username
+class LoginForm(forms.Form):
+    """User login form"""
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Username'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Password'
+        })
+    )
 
-    def clean_password2(self):
-        """
-        Validate that the two password entries match.
-        """
-        password1 = self.cleaned_data.get('password1')
-        password2 = self.cleaned_data.get('password2')
 
-        if password1 and password2 and password1 != password2:
-            raise ValidationError('The two password fields must match.')
+class ContactForm(forms.Form):
+    """Contact form for the contact page"""
+    name = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Your Name'
+        })
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'your.email@example.com'
+        })
+    )
+    subject = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Subject'
+        })
+    )
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 5,
+            'placeholder': 'Your message...'
+        })
+    )
 
-        return password2
 
-    def save(self, commit=True):
-        """
-        Save the user instance with additional fields.
-        Set user as inactive until email is verified (if email verification is enabled).
-        """
-        user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
-        user.first_name = self.cleaned_data['first_name']
-        user.last_name = self.cleaned_data['last_name']
+class ProfilePictureForm(forms.ModelForm):
+    """Form for uploading profile picture"""
+    
+    class Meta:
+        model = UserProfile
+        fields = ['profile_picture']
+        widgets = {
+            'profile_picture': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+                'id': 'profile-picture-input'
+            })
+        }
+    
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture:
+            # Validate file size (max 5MB)
+            if picture.size > 5 * 1024 * 1024:
+                raise forms.ValidationError('Image file too large (max 5MB)')
+            
+            # Validate file type
+            if not picture.content_type.startswith('image/'):
+                raise forms.ValidationError('File must be an image')
+        
+        return picture
 
-        # Set user as inactive until email verification
-        # Change this to True if you want to skip email verification
-        user.is_active = False  # Will be set to True after email verification
 
-        if commit:
-            user.save()
+class PayoutSettingsForm(forms.ModelForm):
+    """Form for managing payout preferences"""
+    
+    class Meta:
+        model = UserProfile
+        fields = [
+            'preferred_payout_method',
+            'venmo_username',
+            'paypal_email',
+        ]
+        widgets = {
+            'preferred_payout_method': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'payout-method'
+            }),
+            'venmo_username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '@username'
+            }),
+            'paypal_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@example.com'
+            }),
+        }
+        help_texts = {
+            'venmo_username': 'Your Venmo username (include @)',
+            'paypal_email': 'Email associated with your PayPal account',
+        }
 
-        return user
+
+class AccountInfoForm(forms.ModelForm):
+    """Form for updating basic account info"""
+    
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'readonly': 'readonly'
+        }),
+        help_text='Contact support to change your email'
+    )
+    
+    class Meta:
+        model = UserProfile
+        fields = ['timezone', 'phone_number']
+        widgets = {
+            'timezone': forms.Select(attrs={'class': 'form-select'}),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '(555) 123-4567'
+            })
+        }
 
 
 class TeamCreationForm(forms.ModelForm):
-    """
-    Form for creating a new team.
-
-    Fields:
-    - name: Team name (required)
-    - description: Team description (optional)
-    - weekly_fee: Weekly fee amount (required) - $5 or $10
-
-    Note: All teams are private by default.
-    Users can only join via join code.
-    """
-
-    # Explicitly define weekly_fee as ChoiceField to ensure dropdown works
-    weekly_fee = forms.ChoiceField(
-        label='Weekly Fee',
-        required=True,
-        choices=[
-            ('', '-- Select Weekly Fee --'),
-            ('5', '$5.00 per week'),
-            ('10', '$10.00 per week'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'form-select',
-            'required': True,
-        }),
-        help_text='Amount each member pays per week to play'
-    )
-
+    """Form for creating a new team"""
+    
     class Meta:
         model = Team
-        fields = ['name', 'description', 'weekly_fee']
-
-        labels = {
-            'name': 'Team Name',
-            'description': 'Team Description',
-        }
-
-        help_texts = {
-            'name': 'Choose a unique name for your team',
-            'description': 'Tell potential members what your team is about (optional)',
-        }
-
+        fields = ['name', 'weekly_fee', 'season_year']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter team name (e.g., "The Baseball Bandits")',
-                'maxlength': 100,
-                'required': True,
+                'placeholder': 'Team Name'
             }),
-            'description': forms.Textarea(attrs={
+            'weekly_fee': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Describe your team (optional)',
+                'placeholder': '10.00',
+                'step': '0.01'
+            }),
+            'season_year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '2026'
             }),
         }
-
-    def clean_name(self):
-        """Validate team name is unique and appropriate"""
-        name = self.cleaned_data.get('name')
-
-        if name:
-            # Check if name already exists (case-insensitive)
-            if Team.objects.filter(name__iexact=name).exists():
-                raise forms.ValidationError(
-                    'A team with this name already exists. Please choose a different name.'
-                )
-
-            # Check minimum length
-            if len(name.strip()) < 3:
-                raise forms.ValidationError(
-                    'Team name must be at least 3 characters long.'
-                )
-
-        return name
-
-    def clean_description(self):
-        """Clean and validate description"""
-        description = self.cleaned_data.get('description')
-
-        if description:
-            # Trim whitespace
-            description = description.strip()
-
-            # Check max length
-            if len(description) > 500:
-                raise forms.ValidationError(
-                    'Description must be 500 characters or less.'
-                )
-
-        return description
-
-    def clean_weekly_fee(self):
-        """
-        Convert string choice to appropriate format for database.
-        This handles conversion whether the model field is DecimalField,
-        CharField, IntegerField, etc.
-        """
-        fee = self.cleaned_data.get('weekly_fee')
-
-        if fee:
-            try:
-                # Convert string to float/decimal
-                # Django will handle converting to the correct type for the model
-                return float(fee)
-            except (ValueError, TypeError):
-                raise forms.ValidationError('Invalid fee selected.')
-
-        return fee
+        help_texts = {
+            'weekly_fee': 'Amount each member pays per week (e.g., 10.00)',
+            'season_year': 'MLB season year for this team',
+        }
 
 
 class JoinTeamForm(forms.Form):
-    """
-    Form for joining an existing team using a join code
-    """
-    join_code = forms.CharField(
-        max_length=10,
-        required=True,
+    """Form for joining a team with invite code"""
+    invite_code = forms.CharField(
+        max_length=20,
         widget=forms.TextInput(attrs={
-            'class': 'form-control form-control-lg text-uppercase',
-            'placeholder': 'Enter 8-character join code',
-            'maxlength': 8,
-            'style': 'letter-spacing: 0.2em; font-weight: bold;',
-            'autocomplete': 'off',
+            'class': 'form-control',
+            'placeholder': 'Enter team invite code'
         }),
-        label='Join Code',
-        help_text='Enter the 8-character code provided by your team captain'
+        help_text='Get this code from your team commissioner'
     )
 
-    def clean_join_code(self):
-        """Validate join code exists and format it"""
-        code = self.cleaned_data.get('join_code', '').strip().upper()
 
-        if not code:
-            raise forms.ValidationError('Please enter a join code.')
-
-        # Check if team exists with this code
-        try:
-            team = Team.objects.get(join_code=code)
-        except Team.DoesNotExist:
-            raise forms.ValidationError('Invalid join code. Please check and try again.')
-
-        # Store the team for later use
-        self.cleaned_data['team'] = team
-
-        return code
-
-# Global priority choices for the contact form
-PRIORITY_CHOICES = [
-    ("Low", "Low"),
-    ("Medium", "Medium"),
-    ("High", "High"),
-    ("Urgent", "Urgent"),
-]
-
-class ContactForm(forms.Form):
-    subject = forms.CharField(max_length=200)
-    priority = forms.ChoiceField(choices=PRIORITY_CHOICES)
-    message = forms.CharField(widget=forms.Textarea)
+class PickForm(forms.ModelForm):
+    """Form for submitting weekly picks"""
+    
+    class Meta:
+        model = Pick
+        fields = ['category', 'player']
+        widgets = {
+            'category': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'player': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }

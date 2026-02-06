@@ -69,7 +69,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     ]
     list_filter = ['timezone', 'preferred_payout_method']
     search_fields = ['user__username', 'user__email', 'venmo_username', 'paypal_email']
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['account_balance', 'stripe_customer_id']
 
     fieldsets = (
         ('User Info', {

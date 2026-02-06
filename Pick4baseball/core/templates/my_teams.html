@@ -10,32 +10,32 @@
         transition: all 0.3s ease;
         cursor: pointer;
     }
-    
+
     .team-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         border-left-color: #764ba2;
     }
-    
+
     .team-card.captain {
         border-left-color: #FFD700;
         background: linear-gradient(to right, #fffef7 0%, #ffffff 20%);
     }
-    
+
     .role-badge {
         font-size: 0.85rem;
     }
-    
+
     .badge-captain {
         background: linear-gradient(135deg, #FFD700, #FFA500);
         color: white;
     }
-    
+
     .empty-state {
         text-align: center;
         padding: 60px 20px;
     }
-    
+
     .empty-state i {
         font-size: 4rem;
         color: #e9ecef;
@@ -71,7 +71,7 @@
                         <h5 class="card-title mb-0">{{ membership.team.name }}</h5>
                         <span class="badge bg-secondary">{{ membership.team.season_year }}</span>
                     </div>
-                    
+
                     <!-- Role Badge -->
                     <div class="mb-3">
                         {% if membership.role == 'captain' %}
@@ -88,7 +88,7 @@
                         </span>
                         {% endif %}
                     </div>
-                    
+
                     <!-- Team Info -->
                     <div class="mb-3">
                         <small class="text-muted">
@@ -103,7 +103,7 @@
                             <i class="fas fa-calendar-alt"></i> Joined {{ membership.joined_at|date:"M j, Y" }}
                         </small>
                     </div>
-                    
+
                     <!-- Status Badge -->
                     {% if membership.team.is_active %}
                     <span class="badge bg-success">
@@ -115,16 +115,16 @@
                     </span>
                     {% endif %}
                 </div>
-                
+
                 <!-- Card Footer -->
                 <div class="card-footer bg-transparent">
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'team_detail' membership.team.id %}" 
+                        <a href="{% url 'team_detail' membership.team.id %}"
                            class="btn btn-sm btn-outline-primary"
                            onclick="event.stopPropagation()">
                             <i class="fas fa-info-circle"></i> View Details
                         </a>
-                        <a href="{% url 'leaderboard' %}?team={{ membership.team.id }}" 
+                        <a href="{% url 'leaderboard' %}?team={{ membership.team.id }}"
                            class="btn btn-sm btn-outline-success"
                            onclick="event.stopPropagation()">
                             <i class="fas fa-trophy"></i> Leaderboard
@@ -135,7 +135,7 @@
         </div>
         {% endfor %}
     </div>
-    
+
     <!-- Summary Stats -->
     <div class="card mt-4 bg-light">
         <div class="card-body">
@@ -170,7 +170,7 @@
             </div>
         </div>
     </div>
-    
+
     {% else %}
     <!-- Empty State -->
     <div class="empty-state">
@@ -180,10 +180,10 @@
             Join a team to start playing or create your own!
         </p>
         <div>
-            <a href="#" class="btn btn-primary btn-lg me-2">
+            <a href="{% url 'create_team' %}" class="btn btn-primary btn-lg me-2">
                 <i class="fas fa-plus"></i> Create Team
             </a>
-            <a href="#" class="btn btn-outline-primary btn-lg">
+            <a href="{% url 'join_team' %}" class="btn btn-outline-primary btn-lg">
                 <i class="fas fa-sign-in-alt"></i> Join Team
             </a>
         </div>

@@ -59,6 +59,10 @@ urlpatterns = [
     path('payments/confirmation/<int:payment_id>/', views.payment_confirmation, name='payment_confirmation'),
     path('api/payments/create-intent/<int:team_id>/', views.create_payment_intent, name='create_payment_intent'),
     path('webhooks/stripe/', views.stripe_webhook, name='stripe_webhook'),
+
+    path('payments/pay-with-balance/', views.pay_with_balance, name='pay_with_balance'),
+    path('payments/withdraw/', views.request_withdrawal, name='request_withdrawal'),
+    path('payments/transactions/', views.transaction_history, name='transaction_history'),
 ]
 
 if settings.DEBUG:

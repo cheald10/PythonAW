@@ -5,6 +5,32 @@
 
 {% block content %}
 <div class="container mt-4">
+    <!-- Account Balance Card -->
+    <div class="card border-primary mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-2">
+                        <i class="fas fa-wallet text-primary"></i> Account Balance
+                    </h5>
+                    <h2 class="text-primary mb-0">${{ user.profile.account_balance|floatformat:2 }}</h2>
+                    {% if user.profile.account_balance < user.profile.low_balance_threshold %}
+                    <small class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Balance below ${{ user.profile.low_balance_threshold }}
+                    </small>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                        <i class="fas fa-arrow-up"></i> Withdraw
+                    </button>
+                    <a href="{% url 'transaction_history' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-history"></i> Transaction History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h2 class="mb-4">
@@ -28,21 +54,21 @@
                 <div class="card-body">
                     {% if current_week %}
                         <p class="mb-2">
-                            <strong>Current Week:</strong> Week {{ current_week.week_number }} 
+                            <strong>Current Week:</strong> Week {{ current_week.week_number }}
                             ({{ current_week.start_date|date:"M d" }} - {{ current_week.end_date|date:"M d, Y" }})
                         </p>
                         <p class="mb-2">
-                            <strong>Payment Deadline:</strong> 
+                            <strong>Payment Deadline:</strong>
                             {{ current_week.deadline_utc|date:"D, M d, Y g:i A T" }}
                         </p>
                     {% else %}
                         <p class="text-muted mb-0">No active week at this time.</p>
                     {% endif %}
-                    
+
                     <hr>
-                    
+
                     <h4 class="mb-0">
-                        Total Outstanding: 
+                        Total Outstanding:
                         <span class="text-{% if total_outstanding > 0 %}danger{% else %}success{% endif %}">
                             ${{ total_outstanding|floatformat:2 }}
                         </span>
@@ -62,25 +88,32 @@
                                 <p class="mb-2">
                                     <strong>Weekly Fee:</strong> ${{ item.team.weekly_fee|floatformat:2 }}
                                 </p>
-                                
-                                {% if item.status == 'paid' %}
-                                    <div class="alert alert-success mb-0">
-                                        <i class="fas fa-check-circle"></i> 
-                                        Paid for Week {{ item.week.week_number }}
+
+                                {% if payment.payment_status == 'pending' or not payment %}
+                                    {% if user.profile.account_balance >= team.weekly_fee %}
+                                    <button class="btn btn-success btn-sm me-2" onclick="payWithBalance('{{ team.id }}', '{{ week.id }}')">
+                                        <i class="fas fa-wallet"></i> Pay with Balance (${{ team.weekly_fee }})
+                                    </button>
+                                {% endif %}
+                                    <button class="btn btn-primary btn-sm" onclick="payWithCard('{{ team.id }}', '{{ week.id }}', '{{ team.weekly_fee }}')">
+                                        <i class="fas fa-credit-card"></i> Pay with Card (${{ team.weekly_fee }})
+                                    </button>
+                                {% elif payment.payment_status == 'paid' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> Paid
+                                {% if payment.payment_method == 'balance' %}(Balance){% else %}(Card){% endif %}
+                                    </span>
+                                {% endif %}
+
                                     </div>
-                                {% elif item.status == 'outstanding' %}
-                                    <div class="alert alert-warning mb-3">
-                                        <i class="fas fa-exclamation-triangle"></i> 
-                                        Payment Required
-                                    </div>
-                                    
+
                                     <p class="mb-3">
-                                        <strong>Amount Due:</strong> 
+                                        <strong>Amount Due:</strong>
                                         <span class="text-danger fs-4">${{ item.amount_due|floatformat:2 }}</span>
                                     </p>
-                                    
-                                    <button 
-                                        class="btn btn-primary w-100 pay-now-btn" 
+
+                                    <button
+                                        class="btn btn-primary w-100 pay-now-btn"
                                         data-team-id="{{ item.team.id }}"
                                         data-team-name="{{ item.team.name }}"
                                         data-amount="{{ item.amount_due }}">
@@ -88,7 +121,7 @@
                                     </button>
                                 {% else %}
                                     <div class="alert alert-info mb-0">
-                                        <i class="fas fa-info-circle"></i> 
+                                        <i class="fas fa-info-circle"></i>
                                         No active week
                                     </div>
                                 {% endif %}
@@ -98,9 +131,9 @@
                 {% empty %}
                     <div class="col-12">
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> 
-                            You are not a member of any teams. 
-                            <a href="{% url 'join_team' %}" class="alert-link">Join a team</a> or 
+                            <i class="fas fa-info-circle"></i>
+                            You are not a member of any teams.
+                            <a href="{% url 'join_team' %}" class="alert-link">Join a team</a> or
                             <a href="{% url 'create_team' %}" class="alert-link">create one</a> to get started!
                         </div>
                     </div>
@@ -131,17 +164,17 @@
                     <p class="mb-2"><strong>Amount:</strong> $<span id="modal-amount"></span></p>
                     <p class="mb-2"><strong>Week:</strong> Week {{ current_week.week_number }}</p>
                 </div>
-                
+
                 <hr>
-                
+
                 <!-- Stripe Payment Element -->
                 <form id="payment-form">
                     <div id="payment-element" class="mb-3">
                         <!-- Stripe will insert payment form here -->
                     </div>
-                    
+
                     <div id="payment-errors" class="alert alert-danger d-none"></div>
-                    
+
                     <button id="submit-payment" class="btn btn-primary w-100" type="submit">
                         <span id="button-text">
                             <i class="fas fa-lock"></i> Pay Securely
@@ -149,6 +182,62 @@
                         <div id="spinner" class="spinner-border spinner-border-sm d-none"></div>
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Withdrawal Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Withdraw Funds</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Available Balance: <strong>${{ user.profile.account_balance|floatformat:2 }}</strong></p>
+                <p class="text-muted small">Minimum withdrawal: $5.00</p>
+
+                <form id="withdrawalForm">
+                    <div class="mb-3">
+                        <label class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="withdrawAmount"
+                               step="0.01" min="5" max="{{ user.profile.account_balance }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Withdrawal Method</label>
+                        <select class="form-select" id="withdrawMethod" required>
+                            <option value="">Choose...</option>
+                            {% if user.profile.stripe_customer_id %}
+                            <option value="stripe">Bank Transfer (Stripe)</option>
+                            {% endif %}
+                            {% if user.profile.paypal_email %}
+                            <option value="paypal">PayPal ({{ user.profile.paypal_email }})</option>
+                            {% endif %}
+                            {% if user.profile.venmo_username %}
+                            <option value="venmo">Venmo (@{{ user.profile.venmo_username }})</option>
+                            {% endif %}
+                        </select>
+                        <small class="text-muted">
+                            Configure payment methods in <a href="{% url 'account_settings' %}">Account Settings</a>
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="withdrawNotes" rows="2"></textarea>
+                    </div>
+                </form>
+
+                <div id="withdrawalMessage" class="alert d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitWithdrawal()">
+                    Request Withdrawal
+                </button>
             </div>
         </div>
     </div>
@@ -170,15 +259,15 @@ document.querySelectorAll('.pay-now-btn').forEach(button => {
         currentTeamId = this.dataset.teamId;
         const teamName = this.dataset.teamName;
         const amount = this.dataset.amount;
-        
+
         // Update modal info
         document.getElementById('modal-team-name').textContent = teamName;
         document.getElementById('modal-amount').textContent = parseFloat(amount).toFixed(2);
-        
+
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
         modal.show();
-        
+
         // Create payment intent
         try {
             const response = await fetch(`/api/payments/create-intent/${currentTeamId}/`, {
@@ -187,9 +276,9 @@ document.querySelectorAll('.pay-now-btn').forEach(button => {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok) {
                 paymentIntentClientSecret = data.clientSecret;
                 initializeStripeElements();
@@ -211,23 +300,96 @@ function initializeStripeElements() {
             colorPrimary: '#0d6efd',
         }
     };
-    
+
     elements = stripe.elements({
         clientSecret: paymentIntentClientSecret,
         appearance: appearance,
     });
-    
+
     const paymentElement = elements.create('payment');
     paymentElement.mount('#payment-element');
+}
+
+function payWithBalance(teamId, weekId) {
+    if (!confirm('Pay weekly fee using your account balance?')) {
+        return;
+    }
+
+    fetch('{% url "pay_with_balance" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            team_id: teamId,
+            week_id: weekId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message + '\nNew Balance: $' + data.new_balance);
+            location.reload();
+        } else {
+            alert('Payment failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Payment error:', error);
+        alert('Payment failed. Please try again.');
+    });
+}
+
+function submitWithdrawal() {
+    const amount = document.getElementById('withdrawAmount').value;
+    const method = document.getElementById('withdrawMethod').value;
+    const notes = document.getElementById('withdrawNotes').value;
+
+    if (!amount || !method) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    fetch('{% url "request_withdrawal" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            amount: amount,
+            method: method,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const messageDiv = document.getElementById('withdrawalMessage');
+        if (data.success) {
+            messageDiv.className = 'alert alert-success';
+            messageDiv.textContent = data.message + ' New Balance: $' + data.new_balance;
+            messageDiv.classList.remove('d-none');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.textContent = data.error;
+            messageDiv.classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Withdrawal error:', error);
+        alert('Withdrawal request failed. Please try again.');
+    });
 }
 
 // Handle form submission
 document.getElementById('payment-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     setLoading(true);
     hideError();
-    
+
     try {
         const {error} = await stripe.confirmPayment({
             elements,
@@ -235,7 +397,7 @@ document.getElementById('payment-form').addEventListener('submit', async functio
                 return_url: window.location.origin + '/payments/',
             },
         });
-        
+
         if (error) {
             showError(error.message);
             setLoading(false);
@@ -253,7 +415,7 @@ function setLoading(isLoading) {
     const submitButton = document.getElementById('submit-payment');
     const buttonText = document.getElementById('button-text');
     const spinner = document.getElementById('spinner');
-    
+
     submitButton.disabled = isLoading;
     buttonText.classList.toggle('d-none', isLoading);
     spinner.classList.toggle('d-none', !isLoading);

@@ -28,7 +28,7 @@ class UserProfile(models.Model):
 
     PAYOUT_METHOD_CHOICES = [
         ('balance', 'Keep in Account Balance'),
-        ('stripe', 'Stripe'),
+        ('stripe', 'Bank Transfer (Stripe)'),
         ('paypal', 'PayPal'),
         ('venmo', 'Venmo'),
     ]
@@ -84,6 +84,12 @@ class UserProfile(models.Model):
         choices=PAYOUT_METHOD_CHOICES,
         default='manual'
     )
+
+class AccountTransaction(models.Model):
+    """
+    Complete audit trail of all account balance changes.
+    Tracks deposits (winnings), withdrawals, and payments.
+    """
 
     # Lifetime statistics
     total_lifetime_winnings = models.DecimalField(

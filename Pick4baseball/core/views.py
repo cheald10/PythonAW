@@ -36,6 +36,8 @@ from .forms import (
     PayoutSettingsForm,
     AccountInfoForm
 )
+from .services.balance_service import BalanceService
+from core.models import AccountTransaction
 
 import secrets
 import stripe
@@ -891,6 +893,183 @@ def create_payment_intent(request, team_id):
         logger.error(f"Error creating payment intent: {str(e)}")
         return JsonResponse({'error': 'Payment processing error'}, status=500)
 
+@login_required
+@require_POST
+def pay_with_balance(request):
+    """
+    Process payment using account balance (no Stripe charge)
+    """
+    try:
+        data = json.loads(request.body)
+        team_id = data.get('team_id')
+        week_id = data.get('week_id')
+
+        team = Team.objects.get(id=team_id)
+        week = Week.objects.get(id=week_id)
+
+        # Verify user is member of team
+        if not TeamMember.objects.filter(user=request.user, team=team, status='active').exists():
+            return JsonResponse({'error': 'You are not a member of this team'}, status=403)
+
+        # Check for existing payment
+        existing_payment = WeeklyPayment.objects.filter(
+            user=request.user,
+            team=team,
+            week=week
+        ).first()
+
+        if existing_payment and existing_payment.payment_status == 'paid':
+            return JsonResponse({'error': 'Payment already made for this week'}, status=400)
+
+        amount = team.weekly_fee
+
+        # Check balance
+        if not BalanceService.has_sufficient_balance(request.user, amount):
+            return JsonResponse({
+                'error': f'Insufficient balance. You have ${BalanceService.get_balance(request.user)}, need ${amount}'
+            }, status=400)
+
+        # Process payment with balance
+        with transaction.atomic():
+            # Create or update payment record
+            if existing_payment:
+                payment = existing_payment
+                payment.payment_status = 'paid'
+                payment.payment_method = 'balance'
+                payment.payment_date = timezone.now()
+                payment.save()
+            else:
+                payment = WeeklyPayment.objects.create(
+                    user=request.user,
+                    team=team,
+                    week=week,
+                    amount=amount,
+                    payment_status='paid',
+                    payment_method='balance',
+                    payment_date=timezone.now()
+                )
+
+            # Deduct from balance
+            transaction_record = BalanceService.deduct_from_balance(
+                user=request.user,
+                amount=amount,
+                description=f"Week {week.week_number} payment for {team.name}",
+                related_payment=payment
+            )
+
+            if not transaction_record:
+                return JsonResponse({'error': 'Payment failed - insufficient balance'}, status=400)
+
+            # Update prize pool
+            prize_pool, created = WeeklyPrizePool.objects.get_or_create(
+                team=team,
+                week=week,
+                defaults={
+                    'total_collected': Decimal('0.00'),
+                    'company_fee': Decimal('0.00')
+                }
+            )
+            prize_pool.total_collected += amount
+            prize_pool.save()
+
+        logger.info(f"Balance payment successful: {request.user.username} - ${amount} - Week {week.week_number}")
+
+        return JsonResponse({
+            'success': True,
+            'payment_id': payment.id,
+            'new_balance': str(BalanceService.get_balance(request.user)),
+            'message': 'Payment successful! Paid from account balance.'
+        })
+
+    except Team.DoesNotExist:
+        return JsonResponse({'error': 'Team not found'}, status=404)
+    except Week.DoesNotExist:
+        return JsonResponse({'error': 'Week not found'}, status=404)
+    except Exception as e:
+        logger.error(f"Balance payment error: {str(e)}")
+        return JsonResponse({'error': f'Payment failed: {str(e)}'}, status=500)
+
+@login_required
+@require_POST
+def request_withdrawal(request):
+    """
+    User requests withdrawal of account balance
+    """
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', '0')))
+        method = data.get('method')  # 'stripe', 'paypal', or 'venmo'
+        notes = data.get('notes', '')
+
+        if method not in ['stripe', 'paypal', 'venmo']:
+            return JsonResponse({'error': 'Invalid withdrawal method'}, status=400)
+
+        # Validate user has payment method configured
+        profile = request.user.profile
+        if method == 'paypal' and not profile.paypal_email:
+            return JsonResponse({'error': 'PayPal email not configured in account settings'}, status=400)
+        if method == 'venmo' and not profile.venmo_username:
+            return JsonResponse({'error': 'Venmo username not configured in account settings'}, status=400)
+
+        success, transaction_record, message = BalanceService.process_withdrawal(
+            user=request.user,
+            amount=amount,
+            withdrawal_method=method,
+            notes=notes
+        )
+
+        if success:
+            logger.info(f"Withdrawal requested: {request.user.username} - ${amount} to {method}")
+            return JsonResponse({
+                'success': True,
+                'transaction_id': transaction_record.id,
+                'new_balance': str(BalanceService.get_balance(request.user)),
+                'message': message
+            })
+        else:
+            return JsonResponse({'error': message}, status=400)
+
+    except Exception as e:
+        logger.error(f"Withdrawal request error: {str(e)}")
+        return JsonResponse({'error': f'Withdrawal failed: {str(e)}'}, status=500)
+
+@login_required
+def transaction_history(request):
+    """
+    Display user's account transaction history
+    """
+    transactions = AccountTransaction.objects.filter(
+        user=request.user
+    ).select_related('related_payment', 'related_payout').order_by('-created_at')
+
+    # Calculate summary stats
+    total_deposits = AccountTransaction.objects.filter(
+        user=request.user,
+        transaction_type='deposit',
+        status='completed'
+    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+
+    total_withdrawals = AccountTransaction.objects.filter(
+        user=request.user,
+        transaction_type='withdrawal',
+        status='completed'
+    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+
+    total_payments = AccountTransaction.objects.filter(
+        user=request.user,
+        transaction_type='payment',
+        status='completed'
+    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+
+    context = {
+        'transactions': transactions,
+        'current_balance': request.user.profile.account_balance,
+        'total_deposits': total_deposits,
+        'total_withdrawals': total_withdrawals,
+        'total_payments': total_payments,
+    }
+
+    return render(request, 'payments/transaction_history.html', context)
 
 @csrf_exempt
 @require_POST

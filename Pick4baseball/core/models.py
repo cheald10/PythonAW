@@ -85,31 +85,32 @@ class UserProfile(models.Model):
         default='manual'
     )
 
-class AccountTransaction(models.Model):
-    """
-    Complete audit trail of all account balance changes.
-    Tracks deposits (winnings), withdrawals, and payments.
-    """
-
     # Lifetime statistics
     total_lifetime_winnings = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal('0.00'),
-        help_text='Total amount won over all time (before payouts)'
+        help_text='Total amount won over all time'
     )
     total_lifetime_paid = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal('0.00'),
-        help_text='Total amount paid in weekly fees over all time'
+        help_text='Total amount paid in weekly fees'
     )
 
+    total_lifetime_paid = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text='Total amount paid in weekly fees'
+    )
+
+    # ADD THESE:
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'user_profiles'
         verbose_name = 'User Profile'
         verbose_name_plural = 'User Profiles'
 
@@ -128,6 +129,9 @@ class AccountTransaction(models.Model):
             return self.profile_picture.url
         return f'https://ui-avatars.com/api/?name={self.user.username}&size=150&background=667eea&color=fff'
 
+# ==============================================================================
+# ACCOUNT TRANSACTIONS
+# ==============================================================================
 
 class AccountTransaction(models.Model):
     """

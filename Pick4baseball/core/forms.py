@@ -13,7 +13,7 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Email Address'
         })
     )
-    
+
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
@@ -23,7 +23,7 @@ class RegistrationForm(UserCreationForm):
                 'placeholder': 'Username'
             }),
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['password1'].widget.attrs.update({
@@ -85,7 +85,7 @@ class ContactForm(forms.Form):
 
 class ProfilePictureForm(forms.ModelForm):
     """Form for uploading profile picture"""
-    
+
     class Meta:
         model = UserProfile
         fields = ['profile_picture']
@@ -96,24 +96,24 @@ class ProfilePictureForm(forms.ModelForm):
                 'id': 'profile-picture-input'
             })
         }
-    
+
     def clean_profile_picture(self):
         picture = self.cleaned_data.get('profile_picture')
         if picture:
             # Validate file size (max 5MB)
             if picture.size > 5 * 1024 * 1024:
                 raise forms.ValidationError('Image file too large (max 5MB)')
-            
+
             # Validate file type
             if not picture.content_type.startswith('image/'):
                 raise forms.ValidationError('File must be an image')
-        
+
         return picture
 
 
 class PayoutSettingsForm(forms.ModelForm):
     """Form for managing payout preferences"""
-    
+
     class Meta:
         model = UserProfile
         fields = [
@@ -143,7 +143,7 @@ class PayoutSettingsForm(forms.ModelForm):
 
 class AccountInfoForm(forms.ModelForm):
     """Form for updating basic account info"""
-    
+
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
@@ -151,7 +151,7 @@ class AccountInfoForm(forms.ModelForm):
         }),
         help_text='Contact support to change your email'
     )
-    
+
     class Meta:
         model = UserProfile
         fields = ['timezone', 'phone_number']
@@ -166,7 +166,7 @@ class AccountInfoForm(forms.ModelForm):
 
 class TeamCreationForm(forms.ModelForm):
     """Form for creating a new team"""
-    
+
     class Meta:
         model = Team
         fields = ['name', 'weekly_fee', 'season_year']
@@ -205,7 +205,7 @@ class JoinTeamForm(forms.Form):
 
 class PickForm(forms.ModelForm):
     """Form for submitting weekly picks"""
-    
+
     class Meta:
         model = Pick
         fields = ['category', 'player']
@@ -216,4 +216,56 @@ class PickForm(forms.ModelForm):
             'player': forms.Select(attrs={
                 'class': 'form-select'
             }),
+        }
+
+class PayoutSettingsForm(forms.ModelForm):
+    """Form for managing payout preferences"""
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'preferred_payout_method',
+            'venmo_username',
+            'paypal_email',
+        ]
+        widgets = {
+            'preferred_payout_method': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'payout-method'
+            }),
+            'venmo_username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '@username'
+            }),
+            'paypal_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@example.com'
+            }),
+        }
+        help_texts = {
+            'venmo_username': 'Your Venmo username (include @)',
+            'paypal_email': 'Email associated with your PayPal account',
+        }
+
+
+class AccountInfoForm(forms.ModelForm):
+    """Form for updating basic account info"""
+
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'readonly': 'readonly'
+        }),
+        help_text='Contact support to change your email'
+    )
+
+    class Meta:
+        model = UserProfile
+        fields = ['timezone', 'phone_number']
+        widgets = {
+            'timezone': forms.Select(attrs={'class': 'form-select'}),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '(555) 123-4567'
+            })
         }

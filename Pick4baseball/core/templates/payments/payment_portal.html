@@ -88,41 +88,28 @@
                                 <p class="mb-2">
                                     <strong>Weekly Fee:</strong> ${{ item.team.weekly_fee|floatformat:2 }}
                                 </p>
+                                <p class="mb-3">
+                                    <strong>Amount Due:</strong>
+                                    <span class="text-danger fs-4">${{ item.amount_due|floatformat:2 }}</span>
+                                </p>
 
-                                {% if payment.payment_status == 'pending' or not payment %}
-                                    {% if user.profile.account_balance >= team.weekly_fee %}
-                                    <button class="btn btn-success btn-sm me-2" onclick="payWithBalance('{{ team.id }}', '{{ week.id }}')">
-                                        <i class="fas fa-wallet"></i> Pay with Balance (${{ team.weekly_fee }})
-                                    </button>
-                                {% endif %}
-                                    <button class="btn btn-primary btn-sm" onclick="payWithCard('{{ team.id }}', '{{ week.id }}', '{{ team.weekly_fee }}')">
-                                        <i class="fas fa-credit-card"></i> Pay with Card (${{ team.weekly_fee }})
-                                    </button>
-                                {% elif payment.payment_status == 'paid' %}
+                                {% if item.payment and item.payment.payment_status == 'paid' %}
                                     <span class="badge bg-success">
                                         <i class="fas fa-check-circle"></i> Paid
-                                {% if payment.payment_method == 'balance' %}(Balance){% else %}(Card){% endif %}
+                                        {% if item.payment.payment_method == 'balance' %}(Balance){% else %}(Card){% endif %}
                                     </span>
-                                {% endif %}
-
-                                    </div>
-
-                                    <p class="mb-3">
-                                        <strong>Amount Due:</strong>
-                                        <span class="text-danger fs-4">${{ item.amount_due|floatformat:2 }}</span>
-                                    </p>
-
-                                    <button
-                                        class="btn btn-primary w-100 pay-now-btn"
-                                        data-team-id="{{ item.team.id }}"
-                                        data-team-name="{{ item.team.name }}"
-                                        data-amount="{{ item.amount_due }}">
-                                        <i class="fas fa-credit-card"></i> Pay Now
+                                {% elif item.week %}
+                                    {% if user.profile.account_balance >= item.team.weekly_fee %}
+                                    <button class="btn btn-success btn-sm me-2" onclick="payWithBalance('{{ item.team.id }}', '{{ item.week.id }}')">
+                                        <i class="fas fa-wallet"></i> Pay with Balance
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-primary btn-sm" onclick="payWithCard('{{ item.team.id }}', '{{ item.week.id }}', '{{ item.team.weekly_fee }}')">
+                                        <i class="fas fa-credit-card"></i> Pay with Card
                                     </button>
                                 {% else %}
                                     <div class="alert alert-info mb-0">
-                                        <i class="fas fa-info-circle"></i>
-                                        No active week
+                                        <i class="fas fa-info-circle"></i> No active week
                                     </div>
                                 {% endif %}
                             </div>
@@ -131,10 +118,7 @@
                 {% empty %}
                     <div class="col-12">
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            You are not a member of any teams.
-                            <a href="{% url 'join_team' %}" class="alert-link">Join a team</a> or
-                            <a href="{% url 'create_team' %}" class="alert-link">create one</a> to get started!
+                             <i class="fas fa-info-circle"></i> You are not a member of any teams yet.
                         </div>
                     </div>
                 {% endfor %}

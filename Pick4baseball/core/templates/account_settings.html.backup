@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Account Settings - PICK 4 Baseball{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-section {
+        margin-bottom: 2rem;
+    }
+    
+    .profile-picture-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #dee2e6;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .payout-method-info {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+    
+    .payout-method-info.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 offset-lg-1">
+            
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-cog text-primary"></i> Account Settings
+                </h1>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Profile Picture Section -->
+            <div class="card shadow-sm mb-4 settings-section">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-camera"></i> Profile Picture
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                            <img src="{{ profile.profile_picture_url }}" 
+                                 alt="Profile Picture" 
+                                 class="profile-picture-preview mb-3"
+                                 id="picture-preview">
+                        </div>
+                        <div class="col-md-9">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="profile_picture">
+                                
+                                <div class="mb-3">
+                                    {{ picture_form.profile_picture }}
+                                    <small class="form-text text-muted">
+                                        Accepted formats: JPG, PNG, GIF (max 5MB)
+                                    </small>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Upload Picture
+                                </button>
+                                {% if profile.profile_picture %}
+                                <a href="#" class="btn btn-outline-danger" id="remove-picture">
+                                    <i class="fas fa-trash"></i> Remove Picture
+                                </a>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payout Settings Section -->
+            <div class="card shadow-sm mb-4 settings-section">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-money-bill-wave"></i> Payout Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Lifetime Stats Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <div class="stat-label">Total Winnings</div>
+                                    <div class="stat-value">${{ profile.total_lifetime_winnings }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <div class="stat-label">Total Paid</div>
+                                    <div class="stat-value">${{ profile.total_lifetime_paid }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <div class="stat-label">Net Profit</div>
+                                    <div class="stat-value {% if profile.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ profile.net_profit }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Payout Method Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="payout_settings">
+                        
+                        <div class="mb-3">
+                            <label for="{{ payout_form.preferred_payout_method.id_for_label }}" class="form-label fw-bold">
+                                Preferred Payout Method
+                            </label>
+                            {{ payout_form.preferred_payout_method }}
+                            <small class="form-text text-muted d-block mt-1">
+                                How would you like to receive your winnings?
+                            </small>
+                        </div>
+
+                        <!-- Venmo Details -->
+                        <div class="payout-method-info" id="venmo-info">
+                            <label for="{{ payout_form.venmo_username.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-mobile-alt"></i> Venmo Username
+                            </label>
+                            {{ payout_form.venmo_username }}
+                            <small class="form-text text-muted">
+                                {{ payout_form.venmo_username.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- PayPal Details -->
+                        <div class="payout-method-info" id="paypal-info">
+                            <label for="{{ payout_form.paypal_email.id_for_label }}" class="form-label fw-bold">
+                                <i class="fab fa-paypal"></i> PayPal Email
+                            </label>
+                            {{ payout_form.paypal_email }}
+                            <small class="form-text text-muted">
+                                {{ payout_form.paypal_email.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Stripe Info -->
+                        <div class="payout-method-info" id="stripe-info">
+                            <div class="alert alert-info">
+                                <i class="fas fa-credit-card"></i>
+                                <strong>Stripe Payments:</strong> Your winnings will be transferred directly to your bank account via Stripe. No additional setup required.
+                            </div>
+                        </div>
+
+                        <!-- Manual Info -->
+                        <div class="payout-method-info" id="manual-info">
+                            <div class="alert alert-info">
+                                <i class="fas fa-hand-holding-usd"></i>
+                                <strong>Manual Payment:</strong> Your team captain will handle payouts directly. Contact them for details.
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success mt-3">
+                            <i class="fas fa-save"></i> Save Payout Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Account Information Section -->
+            <div class="card shadow-sm mb-4 settings-section">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user"></i> Account Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="account_info">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Username</label>
+                                <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                                <small class="form-text text-muted">Your username cannot be changed</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                                <small class="form-text text-muted">Contact support to change your email</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ account_form.timezone.id_for_label }}" class="form-label fw-bold">
+                                    Timezone
+                                </label>
+                                {{ account_form.timezone }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ account_form.phone_number.id_for_label }}" class="form-label fw-bold">
+                                    Phone Number (Optional)
+                                </label>
+                                {{ account_form.phone_number }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Member Since</label>
+                            <input type="text" class="form-control" value="{{ user.date_joined|date:'F j, Y' }}" readonly>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark">
+                            <i class="fas fa-save"></i> Save Account Info
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="card shadow-sm mb-4 settings-section">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt"></i> Security
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'password_reset' %}" class="btn btn-warning">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                    <p class="text-muted mt-2 mb-0">
+                        <small>We'll send you an email with instructions to reset your password.</small>
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Profile picture preview
+    document.getElementById('profile-picture-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('picture-preview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Payout method conditional display
+    function updatePayoutMethodDisplay() {
+        const method = document.getElementById('payout-method').value;
+        
+        // Hide all method-specific info
+        document.querySelectorAll('.payout-method-info').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // Show relevant info based on selected method
+        if (method === 'venmo') {
+            document.getElementById('venmo-info').classList.add('active');
+        } else if (method === 'paypal') {
+            document.getElementById('paypal-info').classList.add('active');
+        } else if (method === 'stripe') {
+            document.getElementById('stripe-info').classList.add('active');
+        } else if (method === 'manual') {
+            document.getElementById('manual-info').classList.add('active');
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', updatePayoutMethodDisplay);
+    
+    // Update when selection changes
+    document.getElementById('payout-method').addEventListener('change', updatePayoutMethodDisplay);
+
+    // Remove picture functionality
+    {% if profile.profile_picture %}
+    document.getElementById('remove-picture').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (confirm('Are you sure you want to remove your profile picture?')) {
+            // You'd implement this via AJAX or form submission
+            alert('Remove picture functionality - implement via form POST or AJAX');
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

@@ -1,11 +1,11 @@
 from django import forms
-from django.contrib.auth.models import User
+from core.models import User
 from django.contrib.auth.forms import UserCreationForm
 from core.models import UserProfile, Team, TeamMember, Pick, PickCategory, MLBPlayer, Week
 
 
 class RegistrationForm(UserCreationForm):
-    """User registration form with email"""
+    """User registration form with email, name, and terms acceptance"""
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
@@ -13,10 +13,33 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Email Address'
         })
     )
+    first_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'First Name'
+        })
+    )
+    last_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Last Name'
+        })
+    )
+    agree_to_terms = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        error_messages={
+            'required': 'You must agree to the Terms of Service and Privacy Policy.'
+        }
+    )
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password1', 'password2']
+        fields = ['username', 'email', 'first_name', 'last_name', 'password1', 'password2']
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -35,6 +58,11 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Confirm Password'
         })
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('An account with this email address already exists.')
+        return email
 
 class LoginForm(forms.Form):
     """User login form"""
@@ -144,25 +172,21 @@ class PayoutSettingsForm(forms.ModelForm):
 class AccountInfoForm(forms.ModelForm):
     """Form for updating basic account info"""
 
-    email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'readonly': 'readonly'
-        }),
-        help_text='Contact support to change your email'
+    # Override timezone to accept any string value from template dropdown
+    timezone = forms.CharField(
+        max_length=50,
+        required=False
     )
 
     class Meta:
         model = UserProfile
         fields = ['timezone', 'phone_number']
         widgets = {
-            'timezone': forms.Select(attrs={'class': 'form-select'}),
             'phone_number': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': '(555) 123-4567'
             })
         }
-
 
 class TeamCreationForm(forms.ModelForm):
     """Form for creating a new team"""
@@ -193,7 +217,7 @@ class TeamCreationForm(forms.ModelForm):
 
 class JoinTeamForm(forms.Form):
     """Form for joining a team with invite code"""
-    invite_code = forms.CharField(
+    join_code = forms.CharField(
         max_length=20,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
@@ -216,56 +240,4 @@ class PickForm(forms.ModelForm):
             'player': forms.Select(attrs={
                 'class': 'form-select'
             }),
-        }
-
-class PayoutSettingsForm(forms.ModelForm):
-    """Form for managing payout preferences"""
-
-    class Meta:
-        model = UserProfile
-        fields = [
-            'preferred_payout_method',
-            'venmo_username',
-            'paypal_email',
-        ]
-        widgets = {
-            'preferred_payout_method': forms.Select(attrs={
-                'class': 'form-select',
-                'id': 'payout-method'
-            }),
-            'venmo_username': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '@username'
-            }),
-            'paypal_email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'email@example.com'
-            }),
-        }
-        help_texts = {
-            'venmo_username': 'Your Venmo username (include @)',
-            'paypal_email': 'Email associated with your PayPal account',
-        }
-
-
-class AccountInfoForm(forms.ModelForm):
-    """Form for updating basic account info"""
-
-    email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'readonly': 'readonly'
-        }),
-        help_text='Contact support to change your email'
-    )
-
-    class Meta:
-        model = UserProfile
-        fields = ['timezone', 'phone_number']
-        widgets = {
-            'timezone': forms.Select(attrs={'class': 'form-select'}),
-            'phone_number': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '(555) 123-4567'
-            })
         }

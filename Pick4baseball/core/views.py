@@ -149,19 +149,33 @@ def verify_email(request, uidb64, token):
         messages.error(request, "The verification link is invalid or has expired.")
         return render(request, 'verification_failed.html')
 
-@login_required
 def resend_verification(request):
-    user = request.user
+    """
+    Resend verification email.
+    Works for unauthenticated users by accepting email via POST.
+    """
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        if email:
+            try:
+                user = User.objects.get(email=email, is_active=False)
+                email_sent = send_verification_email(request, user)
+                if email_sent:
+                    messages.success(request, f'A new verification email has been sent to {email}.')
+                else:
+                    messages.error(request, 'There was an issue sending the email. Please try again.')
+            except User.MultipleObjectsReturned:
+                user = User.objects.filter(email=email, is_active=False).order_by('-date_joined').first()
+                if user:
+                    send_verification_email(request, user)
+                messages.success(request, f'If an account exists with that email, a verification link has been sent.')
+            except User.DoesNotExist:
+                messages.success(request, f'If an account exists with that email, a verification link has been sent.')
+        else:
+            messages.error(request, 'Please enter your email address.')
+        return redirect('verification_sent')
 
-    if user.is_active:
-        messages.info(request, "Your email is already verified.")
-        return redirect("home")  # or wherever you want
-
-    # Re-send the verification email
-    send_verification_email(user)
-
-    messages.success(request, "A new verification email has been sent to your inbox.")
-    return redirect("home")  # or a dedicated "check your email" page
+    return render(request, 'resend_verification.html')
 
 def login_view(request):
     if request.method == 'POST':
@@ -289,7 +303,11 @@ def account_settings(request):
                 messages.success(request, 'Account information updated successfully!')
                 return redirect('account_settings')
             else:
-                messages.error(request, 'Error updating account information.')
+                # Show specific field errors
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f'{field}: {error}')
+                messages.error(request, 'Please correct the errors above.')
 
         elif form_type == 'remove_picture':
             # Handle profile picture removal
@@ -387,24 +405,27 @@ def join_team(request):
     """
     if request.method == 'POST':
         form = JoinTeamForm(request.POST)
-
         if form.is_valid():
             join_code = form.cleaned_data['join_code']
-            team = form.cleaned_data['team']
+
+            # Look up team by join code
+            try:
+                team = Team.objects.get(join_code=join_code)
+            except Team.DoesNotExist:
+                messages.error(request, 'Invalid join code. Please check and try again.')
+                return redirect('join_team')
 
             # Check if user is already a member
             existing_membership = TeamMember.objects.filter(
                 team=team,
                 user=request.user
             ).first()
-
             if existing_membership:
                 messages.warning(
                     request,
                     f'You are already a member of "{team.name}"!'
                 )
                 return redirect('team_detail', team_id=team.id)
-
             # Add user to team
             try:
                 TeamMember.objects.create(
@@ -412,14 +433,11 @@ def join_team(request):
                     user=request.user,
                     role='member'
                 )
-
                 messages.success(
                     request,
                     f'Successfully joined "{team.name}"! Welcome to the team.'
                 )
-
                 return redirect('team_detail', team_id=team.id)
-
             except Exception as e:
                 messages.error(
                     request,
@@ -430,14 +448,10 @@ def join_team(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = JoinTeamForm()
-
     context = {
         'form': form,
     }
-
     return render(request, 'join_team.html', context)
-
-# Add to core/views.py
 
 @login_required
 def make_picks(request):

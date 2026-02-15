@@ -117,6 +117,43 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Captain Tools (if user is captain) -->
+            {% for membership in user_teams %}
+                {% if membership.role == 'captain' %}
+                <div class="card border-warning mt-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-crown me-2"></i>
+                            Captain: Invite Players
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-2">
+                            Share your team join code with friends
+                        </p>
+                        
+                        <div class="input-group mb-2">
+                            <input type="text" 
+                                   class="form-control text-center fw-bold" 
+                                   id="joinCode{{ forloop.counter }}" 
+                                   value="{{ membership.team.join_code }}" 
+                                   readonly>
+                            <button class="btn btn-warning" 
+                                    type="button"
+                                    onclick="copyJoinCode('{{ forloop.counter }}', '{{ membership.team.join_code }}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="copySuccess{{ forloop.counter }}" class="alert alert-success py-1 d-none" role="alert">
+                            <small><i class="fas fa-check-circle me-1"></i> Code copied!</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+            
             {% else %}
             <div class="card border-warning">
                 <div class="card-header bg-warning">
@@ -235,4 +272,38 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Copy join code function for captain tools
+    function copyJoinCode(counter, code) {
+        var input = document.getElementById('joinCode' + counter);
+        input.select();
+        input.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(code).then(function() {
+            // Show success message
+            var msg = document.getElementById('copySuccess' + counter);
+            msg.classList.remove('d-none');
+            
+            // Change button to success state
+            var btn = event.target.closest('button');
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-success');
+            
+            // Reset after 2 seconds
+            setTimeout(function() {
+                msg.classList.add('d-none');
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-warning');
+            }, 2000);
+        }).catch(function(err) {
+            alert('Join code: ' + code);
+        });
+    }
+</script>
 {% endblock %}

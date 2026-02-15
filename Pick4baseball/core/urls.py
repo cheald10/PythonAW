@@ -33,7 +33,7 @@ urlpatterns = [
     path('teams/', views.my_teams, name='my_teams'),
 
     # Leaderboard - FIXED: All use views_leaderboard
-    path('leaderboard/', views_leaderboard.leaderboard, name='leaderboard'),
+    path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('leaderboard/teams/', views_leaderboard.team_leaderboard, name='team_leaderboard'),
     path('results/', views_leaderboard.weekly_results, name='weekly_results'),
     path('results/<int:week_number>/', views_leaderboard.weekly_results, name='weekly_results_specific'),
@@ -60,6 +60,7 @@ urlpatterns = [
     path('payments/confirmation/<int:payment_id>/', views.payment_confirmation, name='payment_confirmation'),
     path('api/payments/create-intent/<int:team_id>/', views.create_payment_intent, name='create_payment_intent'),
     path('webhooks/stripe/', views.stripe_webhook, name='stripe_webhook'),
+    path('payments/paypal/process/', views.process_paypal_payment, name='process_paypal_payment'),
 
     path('payments/pay-with-balance/', views.pay_with_balance, name='pay_with_balance'),
     path('payments/withdraw/', views.request_withdrawal, name='request_withdrawal'),

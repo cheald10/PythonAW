@@ -13,6 +13,53 @@
     {% include "onboarding_panel.html" %}
 {% endif %}
 
+<!-- CAPTAIN TOOLS (if user is captain of any team) -->
+{% if user_team and user_is_captain %}
+<section class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="fas fa-crown me-2"></i>
+            Captain Tools
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            <strong>Invite players to {{ user_team.name }}</strong>
+        </p>
+        
+        <div class="input-group mb-2">
+            <input type="text" 
+                   class="form-control text-center fw-bold" 
+                   id="dashboardJoinCode" 
+                   value="{{ user_team.join_code }}" 
+                   readonly>
+            <button class="btn btn-warning" 
+                    type="button"
+                    onclick="copyDashboardCode()">
+                <i class="fas fa-copy me-1"></i>
+                Copy Join Code
+            </button>
+        </div>
+        
+        <div id="dashboardCopySuccess" class="alert alert-success mt-2 d-none" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            Join code copied! Share it with friends.
+        </div>
+        
+        <div class="d-flex gap-2 mt-3">
+            <a href="{% url 'team_detail' user_team.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-users me-1"></i>
+                View Team
+            </a>
+            <a href="{% url 'leaderboard' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-trophy me-1"></i>
+                Leaderboard
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- WEEK SUMMARY CARD -->
 <section class="card mb-4">
     <div class="card-body">
@@ -124,6 +171,36 @@
 
 {% block extra_js %}
 <script>
+    // Copy join code from dashboard
+    function copyDashboardCode() {
+        var input = document.getElementById('dashboardJoinCode');
+        input.select();
+        input.setSelectionRange(0, 99999); // For mobile
+        
+        navigator.clipboard.writeText(input.value).then(function() {
+            // Show success message
+            var msg = document.getElementById('dashboardCopySuccess');
+            msg.classList.remove('d-none');
+            
+            // Change button to success state
+            var btn = event.target.closest('button');
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-success');
+            
+            // Reset after 2 seconds
+            setTimeout(function() {
+                msg.classList.add('d-none');
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-warning');
+            }, 2000);
+        }).catch(function(err) {
+            alert('Join code: ' + input.value);
+        });
+    }
+    
     // Optional: Add countdown timer for deadline
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Dashboard loaded successfully');

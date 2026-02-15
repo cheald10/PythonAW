@@ -1,61 +1,278 @@
 {% extends 'base.html' %}
 
-{% block title %}Leaderboard - PICK 4 Baseball{% endblock %}
+{% block title %}Leaderboard - {{ team.name }}{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12 col-lg-10 offset-lg-1">
-            
-            <!-- Page Header -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-warning text-dark">
-                    <h2 class="mb-0">
-                        <i class="fas fa-trophy me-2"></i>
-                        Leaderboard
-                    </h2>
-                </div>
-                <div class="card-body">
-                    <p class="mb-0">Season standings and rankings will display here.</p>
-                </div>
-            </div>
-
-            <!-- Coming Soon Message -->
-            <div class="alert alert-info shadow-sm">
-                <h4 class="alert-heading">
-                    <i class="fas fa-ranking-star me-2"></i>
-                    Coming Soon!
-                </h4>
-                <p class="mb-0">
-                    The leaderboard will show all players ranked by their season points. 
-                    Check back soon to see where you stand!
-                </p>
-            </div>
-
-            <!-- Placeholder Stats Preview -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">What You'll See Here</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="mb-0">
-                        <li>Season rankings for all players</li>
-                        <li>Total points earned</li>
-                        <li>Weekly win streaks</li>
-                        <li>Your current position highlighted</li>
-                    </ul>
+<div class="container mt-4">
+    
+    <!-- Team Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold">
+                <i class="fas fa-trophy text-warning me-2"></i>
+                {{ team.name }} Leaderboard
+            </h2>
+            <p class="text-muted mb-0">Track your team's performance and compete for prizes!</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <!-- Year-End Prize Pool Display -->
+            <div class="card bg-success text-white">
+                <div class="card-body py-3">
+                    <div class="small">Year-End Prize Pool</div>
+                    <div class="h3 mb-0 fw-bold">
+                        ${{ yearly_pool|floatformat:2 }}
+                    </div>
                 </div>
             </div>
-
-            <!-- Action Buttons -->
-            <div class="d-grid gap-2">
-                <a href="{% url 'home' %}" class="btn btn-primary">
-                    <i class="fas fa-home me-2"></i>
-                    Back to Home
-                </a>
-            </div>
-
         </div>
     </div>
+
+    {% if error %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ error }}
+        </div>
+    {% else %}
+
+    <!-- ========================================== -->
+    <!-- PANEL 1: LAST WEEK'S RESULTS (Expandable) -->
+    <!-- ========================================== -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <button class="btn btn-link text-white text-decoration-none fw-bold w-100 text-start collapsed" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#weeklyResultsPanel" 
+                    aria-expanded="false" 
+                    aria-controls="weeklyResultsPanel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-calendar-week me-2"></i>
+                        {% if last_scored_week %}
+                            Week {{ last_scored_week.week_number }} Results
+                            <span class="badge bg-light text-primary ms-2">
+                                {{ last_scored_week.saturday_date|date:"M d, Y" }}
+                            </span>
+                        {% else %}
+                            Last Week's Results
+                        {% endif %}
+                    </div>
+                    <i class="fas fa-plus-circle fa-lg"></i>
+                </div>
+            </button>
+        </div>
+        
+        <div class="collapse" id="weeklyResultsPanel">
+            <div class="card-body">
+                {% if last_scored_week %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th class="text-center">Correct Picks</th>
+                                    <th class="text-center">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in weekly_results %}
+                                <tr {% if player.is_current_user %}class="table-info"{% endif %}>
+                                    <td class="fw-bold">#{{ forloop.counter }}</td>
+                                    <td>
+                                        {{ player.player_name }}
+                                        {% if player.is_current_user %}
+                                            <span class="badge bg-info ms-1">You</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary fs-6">
+                                            {{ player.correct_picks }}/4
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if player.correct_picks == 4 %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-trophy"></i> PERFECT!
+                                            </span>
+                                        {% elif player.correct_picks == 3 %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-star"></i> Great!
+                                            </span>
+                                        {% elif player.correct_picks >= 2 %}
+                                            <span class="badge bg-secondary">Good</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-hourglass-half fa-3x mb-3"></i>
+                        <p class="mb-0">No completed weeks yet. Check back after the first week is scored!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PANEL 2: SEASON RANKINGS                  -->
+    <!-- ========================================== -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-line me-2"></i>
+                {{ current_season }} Season Rankings
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if season_rankings %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">Rank</th>
+                                <th>Player</th>
+                                <th class="text-center">Total Correct Picks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in season_rankings %}
+                            <tr {% if player.is_current_user %}class="table-info"{% endif %}>
+                                <td class="fw-bold fs-5">
+                                    {% if player.rank == 1 %}
+                                        <i class="fas fa-trophy text-warning"></i>
+                                    {% elif player.rank == 2 %}
+                                        <i class="fas fa-medal text-secondary"></i>
+                                    {% elif player.rank == 3 %}
+                                        <i class="fas fa-medal" style="color: #CD7F32;"></i>
+                                    {% else %}
+                                        #{{ player.rank }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ player.player_name }}
+                                    {% if player.is_current_user %}
+                                        <span class="badge bg-info ms-1">You</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-dark fs-6">
+                                        {{ player.total_correct }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Info Footer -->
+                <div class="mt-3 p-3 bg-light rounded">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Your Rank</small>
+                            <strong class="fs-5">
+                                {% for player in season_rankings %}
+                                    {% if player.is_current_user %}
+                                        #{{ player.rank }}
+                                    {% endif %}
+                                {% endfor %}
+                            </strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Your Total</small>
+                            <strong class="fs-5">
+                                {% for player in season_rankings %}
+                                    {% if player.is_current_user %}
+                                        {{ player.total_correct }}
+                                    {% endif %}
+                                {% endfor %}
+                            </strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Team Size</small>
+                            <strong class="fs-5">{{ season_rankings|length }}</strong>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <p class="mb-0">Season rankings will appear after picks are scored.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="alert alert-info mt-4">
+        <h6 class="fw-bold">
+            <i class="fas fa-lightbulb me-2"></i>
+            How Rankings Work
+        </h6>
+        <ul class="mb-0 small">
+            <li><strong>Weekly Results:</strong> Shows who got the most picks correct in the last completed week</li>
+            <li><strong>Season Rankings:</strong> Total correct picks across all completed weeks this season</li>
+            <li><strong>Year-End Pool:</strong> Top performers compete for the season-end prize pool!</li>
+        </ul>
+    </div>
+
+    {% endif %}
+
 </div>
+
+<style>
+/* Expand/collapse icon animation */
+[data-bs-toggle="collapse"] .fa-plus-circle {
+    transition: transform 0.3s ease;
+}
+
+[data-bs-toggle="collapse"]:not(.collapsed) .fa-plus-circle {
+    transform: rotate(45deg);
+}
+
+/* Highlight current user row */
+.table-info {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+/* Smooth hover effect */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+</style>
+
+<script>
+// Optional: Auto-expand if there are perfect picks
+document.addEventListener('DOMContentLoaded', function() {
+    {% if weekly_results %}
+        var hasPerfectScore = false;
+        {% for player in weekly_results %}
+            {% if player.correct_picks == 4 %}
+                hasPerfectScore = true;
+            {% endif %}
+        {% endfor %}
+        
+        if (hasPerfectScore) {
+            // If someone got a perfect score, auto-expand the panel
+            var weeklyPanel = document.getElementById('weeklyResultsPanel');
+            var collapseBtn = document.querySelector('[data-bs-target="#weeklyResultsPanel"]');
+            if (weeklyPanel && collapseBtn) {
+                var bsCollapse = new bootstrap.Collapse(weeklyPanel, {
+                    toggle: false
+                });
+                bsCollapse.show();
+                collapseBtn.classList.remove('collapsed');
+            }
+        }
+    {% endif %}
+});
+</script>
+
 {% endblock %}

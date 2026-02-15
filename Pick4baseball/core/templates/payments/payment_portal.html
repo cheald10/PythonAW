@@ -94,6 +94,112 @@
                 </div>
             </div>
 
+            <!-- Payment Method Selection -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Add Funds to Your Balance</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Choose how you'd like to add money to your account balance</p>
+                    
+                    <div class="row g-3">
+                        <!-- Stripe (Credit/Debit Card) -->
+                        <div class="col-md-6">
+                            <div class="card border-primary h-100">
+                                <div class="card-body text-center">
+                                    <i class="fab fa-cc-stripe fa-3x text-primary mb-3"></i>
+                                    <h5>Credit/Debit Card</h5>
+                                    <p class="text-muted small">Visa, Mastercard, Amex</p>
+                                    <button class="btn btn-primary" onclick="showStripePayment()">
+                                        Pay with Card
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PayPal -->
+                        <div class="col-md-6">
+                            <div class="card border-info h-100">
+                                <div class="card-body text-center">
+                                    <i class="fab fa-paypal fa-3x text-info mb-3"></i>
+                                    <h5>PayPal</h5>
+                                    <p class="text-muted small">Fast & secure</p>
+                                    <button class="btn btn-info text-white" onclick="showPayPalPayment()">
+                                        Pay with PayPal
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stripe Payment Section (hidden by default) -->
+            <div id="stripe-section" class="card mb-4" style="display: none;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Add Funds - Credit/Debit Card
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Amount to Add</label>
+                        <select id="stripe-amount" class="form-select form-select-lg">
+                            <option value="10">$10.00</option>
+                            <option value="25">$25.00</option>
+                            <option value="50">$50.00</option>
+                            <option value="100">$100.00</option>
+                            <option value="custom">Custom Amount</option>
+                        </select>
+                    </div>
+                    
+                    <div id="stripe-custom-amount" class="mb-3" style="display: none;">
+                        <label class="form-label">Enter Custom Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="stripe-custom-input" min="5" max="500" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="processStripeDeposit()">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Continue to Payment
+                    </button>
+                    <button class="btn btn-secondary ms-2" onclick="hideStripePayment()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            <!-- PayPal Payment Section (hidden by default) -->
+            <div id="paypal-section" class="card mb-4" style="display: none;">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fab fa-paypal me-2"></i>
+                        Add Funds - PayPal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Amount to Add</label>
+                        <select id="paypal-amount" class="form-select form-select-lg">
+                            <option value="10">$10.00</option>
+                            <option value="25">$25.00</option>
+                            <option value="50">$50.00</option>
+                            <option value="100">$100.00</option>
+                        </select>
+                    </div>
+                    
+                    <!-- PayPal button container -->
+                    <div id="paypal-button-container"></div>
+                    
+                    <button class="btn btn-secondary mt-3" onclick="hidePayPalPayment()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
             <!-- Team Payments -->
             <div class="row">
                 {% for item in payment_data %}
@@ -485,5 +591,180 @@ function hideError() {
 function submitWithdrawal() {
     alert('Withdrawal feature coming soon!');
 }
+</script>
+
+<!-- PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
+
+<script>
+// ============================================
+// PAYMENT METHOD SELECTION
+// ============================================
+
+function showStripePayment() {
+    document.getElementById('stripe-section').style.display = 'block';
+    document.getElementById('paypal-section').style.display = 'none';
+    
+    // Scroll to section
+    document.getElementById('stripe-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideStripePayment() {
+    document.getElementById('stripe-section').style.display = 'none';
+}
+
+function showPayPalPayment() {
+    document.getElementById('paypal-section').style.display = 'block';
+    document.getElementById('stripe-section').style.display = 'none';
+    
+    // Render PayPal buttons
+    renderPayPalButtons();
+    
+    // Scroll to section
+    document.getElementById('paypal-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hidePayPalPayment() {
+    document.getElementById('paypal-section').style.display = 'none';
+    // Clear PayPal buttons
+    document.getElementById('paypal-button-container').innerHTML = '';
+}
+
+// ============================================
+// STRIPE CUSTOM AMOUNT HANDLING
+// ============================================
+
+document.getElementById('stripe-amount').addEventListener('change', function() {
+    const customDiv = document.getElementById('stripe-custom-amount');
+    if (this.value === 'custom') {
+        customDiv.style.display = 'block';
+    } else {
+        customDiv.style.display = 'none';
+    }
+});
+
+function processStripeDeposit() {
+    let amount = document.getElementById('stripe-amount').value;
+    
+    if (amount === 'custom') {
+        amount = document.getElementById('stripe-custom-input').value;
+        if (!amount || parseFloat(amount) < 5) {
+            alert('Please enter an amount of at least $5.00');
+            return;
+        }
+    }
+    
+    // TODO: Open Stripe payment modal for deposit
+    // This would create a PaymentIntent for the deposit amount
+    alert('Stripe deposit integration - Amount: $' + amount);
+    // For now, you can reuse the existing payWithCard flow but modify it for deposits
+}
+
+// ============================================
+// PAYPAL INTEGRATION
+// ============================================
+
+function renderPayPalButtons() {
+    // Clear any existing buttons
+    document.getElementById('paypal-button-container').innerHTML = '';
+    
+    // Get selected amount
+    var amount = document.getElementById('paypal-amount').value;
+    
+    // Render PayPal button
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'blue',
+            layout: 'vertical',
+            label: 'pay'
+        },
+        
+        createOrder: function(data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: amount,
+                        currency_code: 'USD'
+                    },
+                    description: 'Pick 4 Baseball - Account Balance Deposit'
+                }]
+            });
+        },
+        
+        onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+                // Show processing message
+                var container = document.getElementById('paypal-button-container');
+                container.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>';
+                
+                // Send to backend to verify and credit account
+                fetch('{% url "process_paypal_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        order_id: data.orderID,
+                        amount: amount,
+                        payer_email: details.payer.email_address
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        // Show success message
+                        container.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Payment successful!</strong><br>
+                                $${amount} has been added to your account.<br>
+                                New balance: $${result.new_balance}
+                            </div>
+                        `;
+                        
+                        // Reload page after 2 seconds
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        // Show error
+                        container.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Error processing payment:</strong><br>
+                                ${result.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            An error occurred processing your payment. Please contact support.
+                        </div>
+                    `;
+                });
+            });
+        },
+        
+        onError: function(err) {
+            console.error('PayPal error:', err);
+            var container = document.getElementById('paypal-button-container');
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    An error occurred with PayPal. Please try again or use a different payment method.
+                </div>
+            `;
+        }
+    }).render('#paypal-button-container');
+}
+
+// Re-render PayPal buttons when amount changes
+document.getElementById('paypal-amount').addEventListener('change', renderPayPalButtons);
 </script>
 {% endblock %}

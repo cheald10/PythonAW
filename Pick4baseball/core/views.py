@@ -20,7 +20,9 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.db import models, transaction
-from django.db.models import Sum
+from django.db.models import (
+     Sum, Count, Q
+)
 from datetime import timedelta
 from decimal import Decimal
 from .email_utils import send_verification_email
@@ -40,6 +42,7 @@ from .services.balance_service import BalanceService
 
 import secrets
 import stripe
+import paypalrestsdk
 import json
 from django.shortcuts import get_object_or_404
 
@@ -193,74 +196,94 @@ def login_view(request):
 @login_required
 def home(request):
     """
-    Dashboard homepage.
-    Shows current week status, user stats, and quick actions.
+    Main dashboard/home page
+    Shows onboarding for new users, picks summary and stats for existing users
     """
-    # Get current active week
+    from core.models import TeamMember, Week, Pick
+
+    # Check if user is new (not on any team)
+    is_new_user = not TeamMember.objects.filter(user=request.user).exists()
+
+    # Get current week
     current_week = Week.objects.filter(is_active=True).first()
 
-    if not current_week:
-        # No active week - show message
-        context = {
-            'current_week': None,
-            'picks_made': 0,
-            'season_points': 0,
-            'season_rank': '-',
-            'week_points': 0,
-            'time_remaining': None,
-        }
-        return render(request, 'home.html', context)
-
-    # Get user's picks for current week
-    user_picks = Pick.objects.filter(
-        user=request.user,
-        week=current_week
-    )
-    picks_made = user_picks.count()
-
     # Get user's teams
-    user_teams = TeamMember.objects.filter(
-        user=request.user
-    ).select_related('team')
+    user_teams = TeamMember.objects.filter(user=request.user).select_related('team')
 
-    # Calculate time remaining
-    now = timezone.now()
-    if current_week.deadline_utc > now:
-        time_diff = current_week.deadline_utc - now
-        days = time_diff.days
-        hours = time_diff.seconds // 3600
-        minutes = (time_diff.seconds % 3600) // 60
+    # Calculate time remaining until deadline
+    time_remaining = None
+    if current_week and current_week.deadline_utc:
+        from django.utils import timezone
+        now = timezone.now()
+        if current_week.deadline_utc > now:
+            delta = current_week.deadline_utc - now
+            hours = delta.seconds // 3600
+            minutes = (delta.seconds % 3600) // 60
+            if delta.days > 0:
+                time_remaining = f"{delta.days} days, {hours} hours"
+            elif hours > 0:
+                time_remaining = f"{hours} hours, {minutes} minutes"
+            else:
+                time_remaining = f"{minutes} minutes"
 
-        if days > 0:
-            time_remaining = f"{days}d {hours}h {minutes}m"
-        else:
-            time_remaining = f"{hours}h {minutes}m"
-    else:
-        time_remaining = None
+    # Calculate user stats
+    picks_made = 0
+    season_points = 0
+    week_points = 0
+    season_rank = '-'
 
-    # Get user stats (basic implementation)
+    if current_week:
+        # Picks made this week
+        picks_made = Pick.objects.filter(
+            user=request.user,
+            week=current_week
+        ).count()
+
+        # Points this week
+        week_points = Pick.objects.filter(
+            user=request.user,
+            week=current_week,
+            result_status='hit'
+        ).count()
+
+    # Season points (all time)
     season_points = Pick.objects.filter(
         user=request.user,
-        week__season_year=current_week.season_year,
         result_status='hit'
     ).count()
 
-    week_points = user_picks.filter(result_status='hit').count()
-
-    # Calculate rank (placeholder for now)
-    season_rank = '-'  # TODO: Implement ranking logic in Sprint 4
+    # Calculate season rank (optional - can be expensive)
+    # TODO: Optimize this query or cache it
+    # For now, leaving as '-'
 
     context = {
+        # New user onboarding
+        'show_onboarding': is_new_user,
+        'is_new_user': is_new_user,
+
+        # Current week info
         'current_week': current_week,
+        'time_remaining': time_remaining,
+
+        # User's picks
         'picks_made': picks_made,
+
+        # User's teams
+        'user_teams': user_teams,
+
+        # User stats
         'season_points': season_points,
         'season_rank': season_rank,
         'week_points': week_points,
-        'time_remaining': time_remaining,
-        'user_teams': user_teams,
     }
 
     return render(request, 'home.html', context)
+
+# Keep dashboard as a redirect for backwards compatibility
+@login_required
+def dashboard(request):
+    """Redirect to home - dashboard is now the home page"""
+    return redirect('home')
 
 @login_required
 def account_settings(request):
@@ -643,7 +666,6 @@ def make_picks(request):
 
     return render(request, 'make_picks.html', context)
 
-
 @login_required
 def view_picks(request):
     """
@@ -673,9 +695,120 @@ def view_picks(request):
 
 @login_required
 def leaderboard(request):
-    """Leaderboard placeholder"""
-    return render(request, 'leaderboard.html')
+    """
+    Display team leaderboard with:
+    - Panel 1: Last scored week results (expandable)
+    - Panel 2: Season rankings
+    - Year-end prize pool display
+    """
+    user = request.user
 
+    # Get user's team (assuming user is in one team)
+    team_membership = user.team_memberships.first()
+    if not team_membership:
+        return render(request, 'leaderboard.html', {
+            'error': 'You must join a team to view the leaderboard.'
+        })
+
+    team = team_membership.team
+
+    # Get all team members
+    team_members = TeamMember.objects.filter(team=team).select_related('user')
+
+    # ==========================================
+    # PANEL 1: LAST SCORED WEEK RESULTS
+    # ==========================================
+
+    # Find the most recent completed week
+    last_scored_week = Week.objects.filter(
+        is_completed=True
+    ).order_by('-week_number').first()
+
+    weekly_results = []
+    if last_scored_week:
+        for member in team_members:
+            # Count correct picks for this week
+            correct_picks = Pick.objects.filter(
+                user=member.user,
+                week=last_scored_week,
+                result_status='hit'
+            ).count()
+
+            # Get player name (first name or fallback to username/id)
+            player_name = member.user.first_name or member.user.username or f"Player #{member.user.id}"
+
+            weekly_results.append({
+                'player_name': player_name,
+                'user_id': member.user.id,
+                'username': member.user.username,
+                'correct_picks': correct_picks,
+                'is_current_user': member.user.id == user.id
+            })
+
+        # Sort by correct picks (highest first)
+        weekly_results.sort(key=lambda x: x['correct_picks'], reverse=True)
+
+    # ==========================================
+    # PANEL 2: SEASON RANKINGS
+    # ==========================================
+
+    season_rankings = []
+    current_season = last_scored_week.season_year if last_scored_week else 2026
+
+    for member in team_members:
+        # Count total correct picks for the season
+        total_correct = Pick.objects.filter(
+            user=member.user,
+            week__season_year=current_season,
+            week__is_completed=True,
+            result_status='hit'
+        ).count()
+
+        # Get player name
+        player_name = member.user.first_name or member.user.username or f"Player #{member.user.id}"
+
+        season_rankings.append({
+            'player_name': player_name,
+            'user_id': member.user.id,
+            'username': member.user.username,
+            'total_correct': total_correct,
+            'is_current_user': member.user.id == user.id
+        })
+
+    # Sort by total correct picks (highest first)
+    season_rankings.sort(key=lambda x: x['total_correct'], reverse=True)
+
+    # Add ranking position
+    for idx, player in enumerate(season_rankings, 1):
+        player['rank'] = idx
+
+    # ==========================================
+    # YEAR-END PRIZE POOL
+    # ==========================================
+
+    # Get the current season's prize pool
+    try:
+        # Sum up all yearly_pool_amount from all completed weeks this season
+        prize_pool = WeeklyPrizePool.objects.filter(
+            week__season_year=current_season
+        ).aggregate(
+            total_yearly_pool=Sum('season_pot_contribution')
+        )
+        yearly_pool = prize_pool['total_yearly_pool'] or 0
+    except Exception as e:
+        logger.error(f"Error calculating yearly pool: {e}")
+        yearly_pool = 0
+
+    context = {
+        'team': team,
+        'last_scored_week': last_scored_week,
+        'weekly_results': weekly_results,
+        'season_rankings': season_rankings,
+        'yearly_pool': yearly_pool,
+        'current_season': current_season,
+    }
+
+    return render(request, 'leaderboard.html', context)
 
 @login_required
 def weekly_results(request):
@@ -763,57 +896,6 @@ def create_team(request):
     }
 
     return render(request, 'create_team.html', context)
-
-@login_required
-def dashboard(request):
-    from core.models import TeamMember, Week, Pick
-
-    # Check if user is new (not on any team)
-    is_new_user = not TeamMember.objects.filter(user=request.user).exists()
-
-    # Get current week if exists
-    current_week = Week.objects.filter(is_active=True).first()
-
-    # If new user, show onboarding
-    if is_new_user:
-        context = {
-            'show_onboarding': True,
-            'is_new_user': True,
-            'current_week': current_week,
-        }
-        return render(request, 'dashboard.html', context)
-
-    # Existing user - show regular dashboard
-    picks_count = 0
-    total_points = 0
-    correct_picks = 0
-
-    if current_week:
-        picks_count = Pick.objects.filter(
-            user=request.user,
-            week=current_week
-        ).count()
-
-        total_points = Pick.objects.filter(
-            user=request.user,
-            result_status='hit'
-        ).count()
-
-        correct_picks = total_points
-
-    context = {
-        'show_onboarding': False,
-        'is_new_user': False,
-        'current_week': current_week.week_number if current_week else 1,
-        'deadline': current_week.deadline_display if current_week else 'TBD',
-        'picks_count': picks_count,
-        'total_points': total_points,
-        'correct_picks': correct_picks,
-        'streak': 0,
-        'rank': '-',
-        'teams': [],
-    }
-    return render(request, 'dashboard.html', context)
 
 # ==============================================================================
 # PAYMENT VIEWS - BP4A-8: Secure Payment Submission
@@ -936,6 +1018,7 @@ def payment_portal(request):
         'total_outstanding': total_outstanding,
         'current_week': current_week,
         'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY,
+        'paypal_client_id': settings.PAYPAL_CLIENT_ID,
     }
 
     return render(request, 'payments/payment_portal.html', context)
@@ -1065,6 +1148,50 @@ def create_payment_intent(request, team_id):
     except Exception as e:
         logger.error(f"Error creating payment intent: {str(e)}")
         return JsonResponse({'error': 'Payment processing error'}, status=500)
+
+@login_required
+@csrf_exempt  # PayPal POST doesn't include CSRF
+def process_paypal_payment(request):
+    """Process PayPal payment - just verify and credit account"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+    try:
+        data = json.loads(request.body)
+        order_id = data.get('order_id')
+        amount = Decimal(data.get('amount', 0))
+        payer_email = data.get('payer_email', '')
+
+        # PayPal already processed the payment on their end
+        # We just need to credit the user's account
+
+        from core.services.balance_service import BalanceService
+
+        transaction = BalanceService.add_to_balance(
+            user=request.user,
+            amount=amount,
+            description=f'PayPal deposit - Order {order_id}',
+            related_payout=None,
+            processed_by=None
+        )
+
+        logger.info(
+            f"PayPal payment processed: {request.user.username} "
+            f"added ${amount} via order {order_id}"
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'${amount} added to your account',
+            'new_balance': str(request.user.profile.account_balance)
+        })
+
+    except Exception as e:
+        logger.error(f"PayPal payment error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred processing your payment'
+        })
 
 @login_required
 @require_POST

@@ -146,6 +146,95 @@ class BalanceService:
         return (True, transaction_record, "Withdrawal request submitted successfully")
     
     @staticmethod
+    @transaction.atomic
+    def auto_deduct_weekly_fee(user, team, week):
+        """
+        Automatically deduct weekly fee from user's balance
+        
+        Args:
+            user: User object
+            team: Team object (to get weekly fee amount)
+            week: Week object
+        
+        Returns:
+            (success: bool, payment: WeeklyPayment or None, message: str)
+        """
+        try:
+            # Get user profile
+            profile = user.profile
+            weekly_fee = team.weekly_fee
+            
+            # Check if already paid
+            existing_payment = WeeklyPayment.objects.filter(
+                user=user,
+                team=team,
+                week=week,
+                payment_status='completed'
+            ).first()
+            
+            if existing_payment:
+                return (True, existing_payment, "Already paid for this week")
+            
+            # Check sufficient balance
+            if profile.account_balance < weekly_fee:
+                return (
+                    False, 
+                    None, 
+                    f"Insufficient balance. You have ${profile.account_balance}, but need ${weekly_fee}. Please add funds to continue."
+                )
+            
+            # Check auto-pay setting
+            if not profile.auto_pay_from_balance:
+                return (
+                    False,
+                    None,
+                    f"Auto-pay is disabled. You have ${profile.account_balance} available. Enable auto-pay in Account Settings or pay manually."
+                )
+            
+            # Deduct from balance
+            balance_before = profile.account_balance
+            profile.account_balance -= weekly_fee
+            profile.save()
+            
+            # Create payment record
+            payment = WeeklyPayment.objects.create(
+                user=user,
+                team=team,
+                week=week,
+                amount=weekly_fee,
+                payment_method='balance',
+                payment_status='completed',
+                notes='Auto-deducted from account balance'
+            )
+            
+            # Create transaction record
+            AccountTransaction.objects.create(
+                user=user,
+                transaction_type='payment',
+                amount=weekly_fee,
+                balance_before=balance_before,
+                balance_after=profile.account_balance,
+                status='completed',
+                description=f'Week {week.week_number} payment for {team.name}',
+                related_payment=payment
+            )
+            
+            logger.info(
+                f"Auto-deducted ${weekly_fee} from {user.username}'s balance. "
+                f"New balance: ${profile.account_balance}"
+            )
+            
+            return (
+                True, 
+                payment, 
+                f"Your weekly fee of ${weekly_fee} has been automatically deducted from your account balance. New balance: ${profile.account_balance}. This transaction is recorded in your payment history."
+            )
+            
+        except Exception as e:
+            logger.error(f"Auto-deduct error for {user.username}: {str(e)}")
+            return (False, None, "An error occurred processing your payment. Please try again or contact support.")
+    
+    @staticmethod
     def get_balance(user):
         """Get user's current account balance"""
         return user.profile.account_balance

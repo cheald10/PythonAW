@@ -217,6 +217,16 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
+# PayPal Configuration
+PAYPAL_MODE = os.environ.get('PAYPAL_MODE', 'sandbox')  # 'sandbox' or 'live'
+PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID', '')
+PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET', '')
+
+# For production, use live credentials
+if PAYPAL_MODE == 'live':
+    PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_LIVE_CLIENT_ID', PAYPAL_CLIENT_ID)
+    PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_LIVE_CLIENT_SECRET', PAYPAL_CLIENT_SECRET)
+
 # ==============================================================================
 # STRIPE PAYMENT CONFIGURATION
 # ==============================================================================

@@ -31,6 +31,7 @@
             </div>
         </div>
     </div>
+
     <div class="row">
         <div class="col-md-12">
             <h2 class="mb-4">
@@ -93,23 +94,31 @@
                                     <span class="text-danger fs-4">${{ item.amount_due|floatformat:2 }}</span>
                                 </p>
 
-                                {% if item.payment and item.payment.payment_status == 'paid' %}
+                                {% if item.status == 'paid' %}
                                     <span class="badge bg-success">
                                         <i class="fas fa-check-circle"></i> Paid
-                                        {% if item.payment.payment_method == 'balance' %}(Balance){% else %}(Card){% endif %}
                                     </span>
-                                {% elif item.week %}
+                                {% elif item.status == 'outstanding' and item.week %}
                                     {% if user.profile.account_balance >= item.team.weekly_fee %}
                                     <button class="btn btn-success btn-sm me-2" onclick="payWithBalance('{{ item.team.id }}', '{{ item.week.id }}')">
-                                        <i class="fas fa-wallet"></i> Pay with Balance
+                                        <i class="fas fa-wallet"></i> Pay with Balance (${{ user.profile.account_balance|floatformat:2 }})
                                     </button>
+                                    {% else %}
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-info-circle"></i> Add ${{ item.team.weekly_fee|floatformat:2 }} to your balance to pay instantly
+                                    </p>
                                     {% endif %}
-                                    <button class="btn btn-primary btn-sm" onclick="payWithCard('{{ item.team.id }}', '{{ item.week.id }}', '{{ item.team.weekly_fee }}')">
+                                    <button class="btn btn-primary btn-sm"
+                                            onclick="payWithCard('{{ item.team.id }}', '{{ item.week.id }}', '{{ item.team.weekly_fee }}', '{{ item.team.name }}')">
                                         <i class="fas fa-credit-card"></i> Pay with Card
                                     </button>
-                                {% else %}
+                                {% elif item.status == 'no_active_week' %}
                                     <div class="alert alert-info mb-0">
-                                        <i class="fas fa-info-circle"></i> No active week
+                                        <i class="fas fa-info-circle"></i> No active week - payments will be available when the next week begins
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="fas fa-exclamation-triangle"></i> Payment status: {{ item.status }}
                                     </div>
                                 {% endif %}
                             </div>
@@ -118,7 +127,8 @@
                 {% empty %}
                     <div class="col-12">
                         <div class="alert alert-info">
-                             <i class="fas fa-info-circle"></i> You are not a member of any teams yet.
+                            <i class="fas fa-info-circle"></i> You are not a member of any teams yet.
+                            <a href="{% url 'join_team' %}" class="alert-link">Join a team</a> to start playing!
                         </div>
                     </div>
                 {% endfor %}
@@ -135,36 +145,57 @@
 </div>
 
 <!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Complete Payment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="paymentModalLabel">
+                    <i class="fas fa-credit-card"></i> Complete Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="payment-info" class="mb-3">
-                    <p class="mb-2"><strong>Team:</strong> <span id="modal-team-name"></span></p>
-                    <p class="mb-2"><strong>Amount:</strong> $<span id="modal-amount"></span></p>
-                    <p class="mb-2"><strong>Week:</strong> Week {{ current_week.week_number }}</p>
+                <!-- Payment Info -->
+                <div class="alert alert-info mb-3">
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Team:</strong><br>
+                            <span id="modal-team-name"></span>
+                        </div>
+                        <div class="col-6 text-end">
+                            <strong>Amount:</strong><br>
+                            <span class="fs-4 text-primary">$<span id="modal-amount"></span></span>
+                        </div>
+                    </div>
                 </div>
 
-                <hr>
-
-                <!-- Stripe Payment Element -->
-                <form id="payment-form">
-                    <div id="payment-element" class="mb-3">
-                        <!-- Stripe will insert payment form here -->
+                <!-- Loading State -->
+                <div id="payment-loading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
+                    <p class="mt-2 text-muted">Initializing payment form...</p>
+                </div>
 
-                    <div id="payment-errors" class="alert alert-danger d-none"></div>
+                <!-- Payment Form -->
+                <form id="payment-form" style="display: none;">
+                    <!-- Stripe Payment Element will be inserted here -->
+                    <div id="payment-element" class="mb-3"></div>
 
+                    <!-- Error Display -->
+                    <div id="payment-errors" class="alert alert-danger" role="alert" style="display: none;"></div>
+
+                    <!-- Submit Button -->
                     <button id="submit-payment" class="btn btn-primary w-100" type="submit">
                         <span id="button-text">
                             <i class="fas fa-lock"></i> Pay Securely
                         </span>
-                        <div id="spinner" class="spinner-border spinner-border-sm d-none"></div>
+                        <span id="button-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
                     </button>
+
+                    <p class="text-muted small mt-2 text-center">
+                        <i class="fas fa-shield-alt"></i> Secured by Stripe
+                    </p>
                 </form>
             </div>
         </div>
@@ -234,188 +265,12 @@
 // Initialize Stripe
 const stripe = Stripe('{{ stripe_public_key }}');
 let elements;
-let paymentIntentClientSecret;
+let paymentElement;
 let currentTeamId;
+let currentWeekId;
+let paymentInProgress = false;  // Prevent double-clicks
 
-// Handle Pay Now button clicks
-document.querySelectorAll('.pay-now-btn').forEach(button => {
-    button.addEventListener('click', async function() {
-        currentTeamId = this.dataset.teamId;
-        const teamName = this.dataset.teamName;
-        const amount = this.dataset.amount;
-
-        // Update modal info
-        document.getElementById('modal-team-name').textContent = teamName;
-        document.getElementById('modal-amount').textContent = parseFloat(amount).toFixed(2);
-
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
-        modal.show();
-
-        // Create payment intent
-        try {
-            const response = await fetch(`/api/payments/create-intent/${currentTeamId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                paymentIntentClientSecret = data.clientSecret;
-                initializeStripeElements();
-            } else {
-                showError(data.error || 'Failed to initialize payment');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showError('Network error. Please try again.');
-        }
-    });
-});
-
-// Initialize Stripe Elements
-function initializeStripeElements() {
-    const appearance = {
-        theme: 'stripe',
-        variables: {
-            colorPrimary: '#0d6efd',
-        }
-    };
-
-    elements = stripe.elements({
-        clientSecret: paymentIntentClientSecret,
-        appearance: appearance,
-    });
-
-    const paymentElement = elements.create('payment');
-    paymentElement.mount('#payment-element');
-}
-
-function payWithBalance(teamId, weekId) {
-    if (!confirm('Pay weekly fee using your account balance?')) {
-        return;
-    }
-
-    fetch('{% url "pay_with_balance" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            team_id: teamId,
-            week_id: weekId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message + '\nNew Balance: $' + data.new_balance);
-            location.reload();
-        } else {
-            alert('Payment failed: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Payment error:', error);
-        alert('Payment failed. Please try again.');
-    });
-}
-
-function submitWithdrawal() {
-    const amount = document.getElementById('withdrawAmount').value;
-    const method = document.getElementById('withdrawMethod').value;
-    const notes = document.getElementById('withdrawNotes').value;
-
-    if (!amount || !method) {
-        alert('Please fill in all required fields');
-        return;
-    }
-
-    fetch('{% url "request_withdrawal" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            amount: amount,
-            method: method,
-            notes: notes
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        const messageDiv = document.getElementById('withdrawalMessage');
-        if (data.success) {
-            messageDiv.className = 'alert alert-success';
-            messageDiv.textContent = data.message + ' New Balance: $' + data.new_balance;
-            messageDiv.classList.remove('d-none');
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            messageDiv.className = 'alert alert-danger';
-            messageDiv.textContent = data.error;
-            messageDiv.classList.remove('d-none');
-        }
-    })
-    .catch(error => {
-        console.error('Withdrawal error:', error);
-        alert('Withdrawal request failed. Please try again.');
-    });
-}
-
-// Handle form submission
-document.getElementById('payment-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    setLoading(true);
-    hideError();
-
-    try {
-        const {error} = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: window.location.origin + '/payments/',
-            },
-        });
-
-        if (error) {
-            showError(error.message);
-            setLoading(false);
-        }
-        // If no error, Stripe will redirect to return_url
-    } catch (error) {
-        console.error('Payment error:', error);
-        showError('An unexpected error occurred');
-        setLoading(false);
-    }
-});
-
-// Utility functions
-function setLoading(isLoading) {
-    const submitButton = document.getElementById('submit-payment');
-    const buttonText = document.getElementById('button-text');
-    const spinner = document.getElementById('spinner');
-
-    submitButton.disabled = isLoading;
-    buttonText.classList.toggle('d-none', isLoading);
-    spinner.classList.toggle('d-none', !isLoading);
-}
-
-function showError(message) {
-    const errorDiv = document.getElementById('payment-errors');
-    errorDiv.textContent = message;
-    errorDiv.classList.remove('d-none');
-}
-
-function hideError() {
-    const errorDiv = document.getElementById('payment-errors');
-    errorDiv.classList.add('d-none');
-}
-
+// CSRF Token Helper
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -429,6 +284,189 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// Pay with Balance Function
+async function payWithBalance(teamId, weekId) {
+    if (!confirm('Pay with your account balance?')) return;
+
+    try {
+        const response = await fetch('/payments/pay-with-balance/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                team_id: teamId,
+                week_id: weekId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('Payment successful! New balance: $' + data.new_balance);
+            window.location.reload();
+        } else {
+            alert('Payment failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Payment error: ' + error.message);
+    }
+}
+
+// Pay with Card Function - WITH DUPLICATE PREVENTION
+async function payWithCard(teamId, weekId, amount, teamName) {
+    // Prevent multiple simultaneous payment attempts
+    if (paymentInProgress) {
+        alert('Payment is already being processed. Please wait.');
+        return;
+    }
+
+    paymentInProgress = true;
+    currentTeamId = teamId;
+    currentWeekId = weekId;
+
+    try {
+        // Update modal info
+        document.getElementById('modal-team-name').textContent = teamName;
+        document.getElementById('modal-amount').textContent = parseFloat(amount).toFixed(2);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        modal.show();
+
+        // Show loading state
+        document.getElementById('payment-loading').style.display = 'block';
+        document.getElementById('payment-form').style.display = 'none';
+
+        // Create payment intent
+        const response = await fetch(`/api/payments/create-intent/${teamId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Handle specific error cases
+            if (response.status === 400 && data.error.includes('already paid')) {
+                // User already paid - show message and reload
+                showError(data.error);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+                return;
+            }
+
+            throw new Error(data.error || 'Failed to initialize payment');
+        }
+
+        // Initialize Stripe Elements with the client secret
+        const appearance = {
+            theme: 'stripe',
+            variables: {
+                colorPrimary: '#0d6efd',
+            }
+        };
+
+        elements = stripe.elements({
+            clientSecret: data.clientSecret,
+            appearance: appearance
+        });
+
+        // Create and mount the Payment Element
+        paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+
+        // Hide loading, show form
+        document.getElementById('payment-loading').style.display = 'none';
+        document.getElementById('payment-form').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error initializing payment:', error);
+        showError(error.message || 'Failed to initialize payment form');
+        document.getElementById('payment-loading').style.display = 'none';
+
+        // Close modal on error
+        setTimeout(() => {
+            const modalElement = document.getElementById('paymentModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) modal.hide();
+        }, 3000);
+    } finally {
+        // Always reset the flag when done (success or error)
+        paymentInProgress = false;
+    }
+}
+
+// Handle form submission
+document.getElementById('payment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    setLoading(true);
+    hideError();
+
+    try {
+        // Confirm the payment with Stripe
+        const {error} = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                return_url: window.location.origin + '/payments/',
+            },
+        });
+
+        if (error) {
+            // Payment failed - show error
+            showError(error.message);
+            setLoading(false);
+        } else {
+            // Payment succeeded - Stripe will redirect to return_url
+            // The webhook will handle updating the database
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        showError('An unexpected error occurred');
+        setLoading(false);
+    }
+});
+
+// UI Helper Functions
+function setLoading(isLoading) {
+    const submitButton = document.getElementById('submit-payment');
+    const buttonText = document.getElementById('button-text');
+    const buttonSpinner = document.getElementById('button-spinner');
+
+    if (isLoading) {
+        submitButton.disabled = true;
+        buttonText.style.display = 'none';
+        buttonSpinner.style.display = 'inline-block';
+    } else {
+        submitButton.disabled = false;
+        buttonText.style.display = 'inline';
+        buttonSpinner.style.display = 'none';
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('payment-errors');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function hideError() {
+    const errorDiv = document.getElementById('payment-errors');
+    errorDiv.style.display = 'none';
+}
+
+// Withdrawal Function (placeholder)
+function submitWithdrawal() {
+    alert('Withdrawal feature coming soon!');
 }
 </script>
 {% endblock %}

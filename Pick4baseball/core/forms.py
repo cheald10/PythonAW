@@ -193,25 +193,18 @@ class TeamCreationForm(forms.ModelForm):
 
     class Meta:
         model = Team
-        fields = ['name', 'weekly_fee', 'season_year']
+        fields = ['name', 'weekly_fee',]
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Team Name'
             }),
-            'weekly_fee': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '10.00',
-                'step': '0.01'
-            }),
-            'season_year': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '2026'
+            'weekly_fee': forms.Select(attrs={
+                'class': 'form-select',
             }),
         }
         help_texts = {
             'weekly_fee': 'Amount each member pays per week (e.g., 10.00)',
-            'season_year': 'MLB season year for this team',
         }
 
 

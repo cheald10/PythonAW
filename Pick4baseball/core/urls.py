@@ -23,6 +23,7 @@ urlpatterns = [
     path('create-team/', views.create_team, name='create_team'),
     path('join-team/', views.join_team, name='join_team'),
     path('how-to-play/', views.how_to_play, name='how_to_play'),
+    path('payments/debug/', views.payment_portal_debug, name='payment_portal_debug'),
 
     # Picks
 

@@ -4,11 +4,12 @@
 {% block title %}Account Settings - PICK 4 Baseball{% endblock %}
 
 {% block extra_css %}
+{{ block.super }}
 <style>
     .settings-section {
         margin-bottom: 2rem;
     }
-    
+
     .profile-picture-preview {
         width: 150px;
         height: 150px;
@@ -16,18 +17,18 @@
         object-fit: cover;
         border: 4px solid #dee2e6;
     }
-    
+
     .stats-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
     }
-    
+
     .stat-value {
         font-size: 2rem;
         font-weight: bold;
     }
-    
+
     .payout-method-info {
         display: none;
         margin-top: 1rem;
@@ -35,7 +36,7 @@
         background: #f8f9fa;
         border-radius: 0.5rem;
     }
-    
+
     .payout-method-info.active {
         display: block;
     }
@@ -46,7 +47,7 @@
 <div class="container py-5">
     <div class="row">
         <div class="col-12 col-lg-10 offset-lg-1">
-            
+
             <!-- Page Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="display-5">
@@ -100,11 +101,11 @@
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <input type="hidden" name="form_type" value="profile_picture">
-                        
+
                         <div class="row align-items-center">
                             <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <img src="{{ profile.profile_picture_url }}" 
-                                     alt="Profile Picture" 
+                                <img src="{{ profile.profile_picture_url }}"
+                                     alt="Profile Picture"
                                      class="profile-picture-preview"
                                      id="picture-preview">
                             </div>
@@ -123,11 +124,11 @@
                                         Max file size: 5MB. Accepted formats: JPG, PNG, GIF
                                     </div>
                                 </div>
-                                
+
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-upload"></i> Upload Picture
                                 </button>
-                                
+
                                 {% if profile.profile_picture %}
                                 <button type="button" class="btn btn-outline-danger" id="remove-picture">
                                     <i class="fas fa-trash"></i> Remove Picture
@@ -150,7 +151,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="form_type" value="payout_settings">
-                        
+
                         <div class="mb-3">
                             <label for="{{ payout_form.preferred_payout_method.id_for_label }}" class="form-label fw-bold">
                                 Preferred Payout Method
@@ -229,7 +230,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="form_type" value="account_info">
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Username</label>
@@ -249,7 +250,25 @@
                                 <label for="{{ account_form.timezone.id_for_label }}" class="form-label fw-bold">
                                     Timezone
                                 </label>
-                                {{ account_form.timezone }}
+                                <select name="timezone" class="form-select" id="id_timezone">
+                                    <option value="" {% if not profile.timezone %}selected{% endif %}>-- Select Timezone --</option>
+                                    <option value="US/Eastern" {% if profile.timezone == "US/Eastern" %}selected{% endif %}>Eastern Time (US/Eastern)</option>
+                                    <option value="US/Central" {% if profile.timezone == "US/Central" %}selected{% endif %}>Central Time (US/Central)</option>
+                                    <option value="US/Mountain" {% if profile.timezone == "US/Mountain" %}selected{% endif %}>Mountain Time (US/Mountain)</option>
+                                    <option value="US/Pacific" {% if profile.timezone == "US/Pacific" %}selected{% endif %}>Pacific Time (US/Pacific)</option>
+                                    <option value="US/Alaska" {% if profile.timezone == "US/Alaska" %}selected{% endif %}>Alaska Time (US/Alaska)</option>
+                                    <option value="US/Hawaii" {% if profile.timezone == "US/Hawaii" %}selected{% endif %}>Hawaii Time (US/Hawaii)</option>
+                                    <option value="America/New_York" {% if profile.timezone == "America/New_York" %}selected{% endif %}>Eastern Time (America/New_York)</option>
+                                    <option value="America/Chicago" {% if profile.timezone == "America/Chicago" %}selected{% endif %}>Central Time (America/Chicago)</option>
+                                    <option value="America/Denver" {% if profile.timezone == "America/Denver" %}selected{% endif %}>Mountain Time (America/Denver)</option>
+                                    <option value="America/Los_Angeles" {% if profile.timezone == "America/Los_Angeles" %}selected{% endif %}>Pacific Time (America/Los_Angeles)</option>
+                                    <option value="America/Anchorage" {% if profile.timezone == "America/Anchorage" %}selected{% endif %}>Alaska Time (America/Anchorage)</option>
+                                    <option value="America/Phoenix" {% if profile.timezone == "America/Phoenix" %}selected{% endif %}>Arizona Time (America/Phoenix)</option>
+                                    <option value="Europe/London" {% if profile.timezone == "Europe/London" %}selected{% endif %}>London (Europe/London)</option>
+                                    <option value="Europe/Paris" {% if profile.timezone == "Europe/Paris" %}selected{% endif %}>Paris (Europe/Paris)</option>
+                                    <option value="Asia/Tokyo" {% if profile.timezone == "Asia/Tokyo" %}selected{% endif %}>Tokyo (Asia/Tokyo)</option>
+                                    <option value="Australia/Sydney" {% if profile.timezone == "Australia/Sydney" %}selected{% endif %}>Sydney (Australia/Sydney)</option>
+                                </select>
                                 {% if account_form.timezone.errors %}
                                     <div class="text-danger mt-2">
                                         {{ account_form.timezone.errors }}
@@ -320,12 +339,12 @@
     // Payout method conditional display
     function updatePayoutMethodDisplay() {
         const method = document.getElementById('payout-method').value;
-        
+
         // Hide all method-specific info
         document.querySelectorAll('.payout-method-info').forEach(el => {
             el.classList.remove('active');
         });
-        
+
         // Show relevant info based on selected method
         if (method === 'venmo') {
             document.getElementById('venmo-info').classList.add('active');
@@ -340,7 +359,7 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', updatePayoutMethodDisplay);
-    
+
     // Update when selection changes
     document.getElementById('payout-method').addEventListener('change', updatePayoutMethodDisplay);
 

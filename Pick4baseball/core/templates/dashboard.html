@@ -25,7 +25,7 @@
             <span class="text-muted">Deadline</span>
             <span class="badge bg-warning text-dark">
                 <i class="fas fa-clock" aria-hidden="true"></i>
-                {{ deadline|default:"TBD" }}
+                {{ deadline|date:"D, M d \a\t g:i A T"|default:"TBD" }}
             </span>
         </div>
 

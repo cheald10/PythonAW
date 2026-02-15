@@ -4,6 +4,8 @@
 {% block title %}{{ team.name }} - Baseball Pick 4{% endblock %}
 
 {% block extra_css %}
+REPLACE THE ENTIRE <style> BLOCK in team_detail.html with this:
+
 <style>
     .team-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -12,57 +14,82 @@
         padding: 30px;
         margin-bottom: 30px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        max-width: 100%;
+        overflow: hidden;
     }
-    
+
+    .team-header h1 {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
     .info-card {
         background: white;
         border-radius: 10px;
         padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        max-width: 100%;
     }
-    
+
     .stat-item {
         padding: 15px;
         border-left: 4px solid #667eea;
         margin-bottom: 10px;
         background: #f8f9fa;
         border-radius: 5px;
+        word-wrap: break-word;
     }
-    
+
     .member-item {
         padding: 15px;
         border-bottom: 1px solid #e9ecef;
         transition: background 0.2s;
     }
-    
+
     .member-item:hover {
         background: #f8f9fa;
     }
-    
+
     .member-item:last-child {
         border-bottom: none;
     }
-    
+
     .badge-captain {
         background: linear-gradient(135deg, #FFD700, #FFA500);
         color: white;
     }
-    
+
     .join-code-box {
         background: #f8f9fa;
         border: 2px dashed #667eea;
         border-radius: 10px;
         padding: 20px;
         text-align: center;
+        max-width: 100%;
+        overflow: hidden;
     }
-    
+
     .join-code {
         font-size: 2rem;
         font-weight: bold;
         letter-spacing: 3px;
         color: #667eea;
         font-family: monospace;
+        word-break: break-all;
+        overflow-wrap: break-word;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .join-code {
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .team-header h1 {
+            font-size: 2rem;
+        }
     }
 </style>
 {% endblock %}
@@ -98,22 +125,22 @@
                 <h4 class="mb-3">
                     <i class="fas fa-info-circle text-primary"></i> Team Information
                 </h4>
-                
+
                 <div class="stat-item">
                     <strong><i class="fas fa-crown text-warning"></i> Captain</strong><br>
                     <span class="ms-4">{{ team.captain.username }}</span>
                 </div>
-                
+
                 <div class="stat-item">
                     <strong><i class="fas fa-users text-info"></i> Members</strong><br>
                     <span class="ms-4">{{ team.member_count }} / {{ team.max_members }}</span>
                 </div>
-                
+
                 <div class="stat-item">
                     <strong><i class="fas fa-dollar-sign text-success"></i> Weekly Fee</strong><br>
                     <span class="ms-4">${{ team.weekly_fee }}</span>
                 </div>
-                
+
                 <div class="stat-item">
                     <strong><i class="fas fa-lock text-danger"></i> Privacy</strong><br>
                     <span class="ms-4">
@@ -152,7 +179,7 @@
                     </h4>
                     <span class="badge bg-primary">{{ members.count }} Members</span>
                 </div>
-                
+
                 {% if members %}
                 <div class="members-list">
                     {% for member in members %}
@@ -187,7 +214,7 @@
                             </div>
                             <div class="col-md-3 text-end">
                                 <small class="text-muted">
-                                    <i class="fas fa-calendar-alt"></i> 
+                                    <i class="fas fa-calendar-alt"></i>
                                     Joined {{ member.joined_at|date:"M Y" }}
                                 </small>
                             </div>
@@ -212,11 +239,11 @@
                 <a href="{% url 'home' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Home
                 </a>
-                
+
                 <a href="{% url 'leaderboard' %}?team={{ team.id }}" class="btn btn-primary">
                     <i class="fas fa-trophy"></i> View Leaderboard
                 </a>
-                
+
                 {% if team.captain == request.user %}
                 <a href="#" class="btn btn-outline-warning">
                     <i class="fas fa-cog"></i> Team Settings
@@ -232,7 +259,7 @@
 <script>
     function copyJoinCode() {
         const code = "{{ team.join_code }}";
-        
+
         // Copy to clipboard
         navigator.clipboard.writeText(code).then(() => {
             // Show success message
@@ -241,7 +268,7 @@
             btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
             btn.classList.remove('btn-outline-primary');
             btn.classList.add('btn-success');
-            
+
             // Reset after 2 seconds
             setTimeout(() => {
                 btn.innerHTML = originalHtml;

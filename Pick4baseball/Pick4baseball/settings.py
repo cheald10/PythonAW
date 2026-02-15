@@ -221,13 +221,13 @@ LOGOUT_REDIRECT_URL = 'login'
 # STRIPE PAYMENT CONFIGURATION
 # ==============================================================================
 
-STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 
 # Validate Stripe keys are present (optional - helpful for debugging)
-if not STRIPE_PUBLIC_KEY:
-    print("⚠️  WARNING: STRIPE_PUBLIC_KEY not set in .env file")
+if not STRIPE_PUBLISHABLE_KEY:
+    print("⚠️  WARNING: STRIPE_PUBLISHABLE_KEY not set in .env file")
 if not STRIPE_SECRET_KEY:
     print("⚠️  WARNING: STRIPE_SECRET_KEY not set in .env file")
 if not STRIPE_WEBHOOK_SECRET:

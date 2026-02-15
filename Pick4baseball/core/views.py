@@ -325,12 +325,12 @@ def account_settings(request):
     # Calculate lifetime stats
     total_paid = WeeklyPayment.objects.filter(
         user=request.user,
-        payment_status='completed'
+        payment_status='paid'
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     total_winnings = WeeklyPayout.objects.filter(
         user=request.user,
-        payout_status='completed'
+        payout_status='paid'
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     net_profit = total_winnings - total_paid
@@ -773,11 +773,77 @@ def dashboard(request):
 # ==============================================================================
 
 @login_required
+def payment_portal_debug(request):
+    """DEBUG VERSION - Shows what the view sees"""
+    from django.http import HttpResponse
+    from decimal import Decimal
+
+    # Get user's team memberships
+    memberships = TeamMember.objects.filter(
+        user=request.user,
+        status='active'
+    ).select_related('team')
+
+    # Get current week
+    current_week = Week.objects.filter(is_active=True).first()
+
+    # Build debug output
+    output = [
+        "<h1>Payment Portal Debug</h1>",
+        f"<p><strong>Logged in as:</strong> {request.user.username} (ID: {request.user.id})</p>",
+        f"<p><strong>Active memberships found:</strong> {memberships.count()}</p>",
+        "<ul>",
+    ]
+
+    for m in memberships:
+        output.append(f"<li>Team: {m.team.name}, Status: '{m.status}', Role: {m.role}</li>")
+
+    output.append("</ul>")
+    output.append(f"<p><strong>Current active week:</strong> {current_week}</p>")
+
+    # Show what would go in payment_data
+    payment_data = []
+    for membership in memberships:
+        team = membership.team
+        if current_week:
+            payment_exists = WeeklyPayment.objects.filter(
+                user=request.user,
+                team=team,
+                week=current_week,
+                payment_status__in=['paid', 'pending', 'processing']
+            ).exists()
+            payment_status = 'paid' if payment_exists else 'outstanding'
+            amount_due = Decimal('0.00') if payment_exists else team.weekly_fee
+        else:
+            payment_status = 'no_active_week'
+            amount_due = Decimal('0.00')
+
+        payment_data.append({
+            'team': team,
+            'status': payment_status,
+            'amount_due': amount_due,
+        })
+
+    output.append(f"<p><strong>Items in payment_data:</strong> {len(payment_data)}</p>")
+    output.append("<ul>")
+    for item in payment_data:
+        output.append(f"<li>Team: {item['team'].name}, Status: {item['status']}, Amount: ${item['amount_due']}</li>")
+    output.append("</ul>")
+
+    output.append("<hr>")
+    output.append(f"<p><a href='/payments/'>Go to real payment portal</a></p>")
+
+    return HttpResponse('\n'.join(output))
+
+@login_required
 def payment_portal(request):
     """
     Main payment portal view.
     Shows payment status, outstanding fees, and payment options.
     """
+    from django.conf import settings
+    from decimal import Decimal
+
     # Get user's team memberships
     memberships = TeamMember.objects.filter(
         user=request.user,
@@ -799,7 +865,7 @@ def payment_portal(request):
                 user=request.user,
                 team=team,
                 week=current_week,
-                payment_status__in=['completed', 'pending']
+                payment_status__in=['paid', 'pending']
             ).exists()
 
             payment_status = 'paid' if payment_exists else 'outstanding'
@@ -822,60 +888,83 @@ def payment_portal(request):
         'payment_data': payment_data,
         'total_outstanding': total_outstanding,
         'current_week': current_week,
-        'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+        'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY,
     }
 
     return render(request, 'payments/payment_portal.html', context)
 
-
 @login_required
+@require_POST
 def create_payment_intent(request, team_id):
     """
     Create a Stripe Payment Intent for a team payment.
-    Returns client secret for frontend to complete payment.
+    Handles duplicate payment attempts gracefully by cleaning up old pending/failed records.
     """
-    # Initialize Stripe with the API key
     stripe.api_key = settings.STRIPE_SECRET_KEY
 
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
-
     try:
-        team = get_object_or_404(Team, id=team_id)
+        team = Team.objects.get(id=team_id)
+        current_week = Week.objects.filter(is_active=True).first()
 
-        # Verify user is a team member
-        membership = TeamMember.objects.filter(
+        if not current_week:
+            return JsonResponse({'error': 'No active week at this time'}, status=400)
+
+        # Verify user is a member of this team
+        is_member = TeamMember.objects.filter(
             user=request.user,
             team=team,
             status='active'
-        ).first()
+        ).exists()
 
-        if not membership:
-            return JsonResponse({'error': 'Not a team member'}, status=403)
+        if not is_member:
+            return JsonResponse({'error': 'You are not a member of this team'}, status=403)
 
-        # Get current week
-        current_week = Week.objects.filter(is_active=True).first()
-        if not current_week:
-            return JsonResponse({'error': 'No active week'}, status=400)
-
-        # Check if already paid
+        # Check for existing payment
         existing_payment = WeeklyPayment.objects.filter(
             user=request.user,
             team=team,
-            week=current_week,
-            payment_status__in=['completed', 'pending']
+            week=current_week
         ).first()
 
-        if existing_payment:
-            return JsonResponse({'error': 'Already paid for this week'}, status=400)
+        # If payment already completed or processing, reject
+        if existing_payment and existing_payment.payment_status in ['paid', 'processing']:
+            logger.warning(
+                f"Duplicate payment attempt by {request.user.username} for "
+                f"{team.name} Week {current_week.week_number} - already {existing_payment.payment_status}"
+            )
+            return JsonResponse({
+                'error': 'You have already paid for this week. Please refresh the page.'
+            }, status=400)
+
+        # If payment is pending or failed, clean it up
+        if existing_payment and existing_payment.payment_status in ['pending', 'failed']:
+            logger.info(
+                f"Cleaning up {existing_payment.payment_status} payment for "
+                f"{request.user.username} - {team.name} Week {current_week.week_number}"
+            )
+
+            # Try to cancel old Stripe payment intent if it exists
+            if existing_payment.stripe_payment_intent_id:
+                try:
+                    stripe.PaymentIntent.cancel(existing_payment.stripe_payment_intent_id)
+                    logger.info(f"Cancelled old payment intent: {existing_payment.stripe_payment_intent_id}")
+                except stripe.error.InvalidRequestError:
+                    # Intent might already be expired or cancelled
+                    logger.info(f"Could not cancel payment intent (likely already expired): {existing_payment.stripe_payment_intent_id}")
+                except Exception as e:
+                    logger.warning(f"Error cancelling payment intent: {e}")
+
+            # Delete the old payment record
+            existing_payment.delete()
+            logger.info("Old payment record deleted - proceeding with new payment")
 
         # Get or create Stripe customer
-        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+        user_profile = request.user.profile
 
         if not user_profile.stripe_customer_id:
             customer = stripe.Customer.create(
                 email=request.user.email,
-                name=request.user.get_full_name() or request.user.username,
+                name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
                 metadata={
                     'user_id': request.user.id,
                     'username': request.user.username,
@@ -987,19 +1076,19 @@ def transaction_history(request):
     total_deposits = AccountTransaction.objects.filter(
         user=request.user,
         transaction_type='deposit',
-        status='completed'
+        status='paid'
     ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
 
     total_withdrawals = AccountTransaction.objects.filter(
         user=request.user,
         transaction_type='withdrawal',
-        status='completed'
+        status='paid'
     ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
 
     total_payments = AccountTransaction.objects.filter(
         user=request.user,
         transaction_type='payment',
-        status='completed'
+        status='paid'
     ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
 
     context = {
@@ -1026,27 +1115,38 @@ def stripe_webhook(request):
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-    except ValueError:
-        logger.error("Invalid webhook payload")
+    except ValueError as e:
         return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError:
-        logger.error("Invalid webhook signature")
+    except stripe.error.SignatureVerificationError as e:
+        return HttpResponse(status=400)
+    except Exception as e:
         return HttpResponse(status=400)
 
     # Handle the event
-    if event['type'] == 'payment_intent.succeeded':
-        payment_intent = event['data']['object']
-        handle_payment_success(payment_intent)
+    try:
+        if event['type'] == 'payment_intent.succeeded':
+            payment_intent = event['data']['object']
+            handle_payment_success(payment_intent)
 
-    elif event['type'] == 'payment_intent.payment_failed':
-        payment_intent = event['data']['object']
-        handle_payment_failure(payment_intent)
+        elif event['type'] == 'charge.succeeded':
+            charge = event['data']['object']
+            payment_intent_id = charge.get('payment_intent')
+            if payment_intent_id:
+                stripe.api_key = settings.STRIPE_SECRET_KEY
+                payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+                handle_payment_success(payment_intent)
 
-    else:
-        logger.info(f"Unhandled webhook event type: {event['type']}")
+        elif event['type'] == 'payment_intent.payment_failed':
+            payment_intent = event['data']['object']
+            handle_payment_failure(payment_intent)
+
+    except Exception as e:
+        # Log error but still return 200 to Stripe
+        import sys
+        sys.stderr.write(f"Webhook processing error: {e}\n")
+        pass
 
     return HttpResponse(status=200)
-
 
 def handle_payment_success(payment_intent):
     """
@@ -1077,7 +1177,7 @@ def handle_payment_success(payment_intent):
                 week_id=week_id,
                 defaults={
                     'amount': Decimal(str(payment_intent['amount'])) / 100,  # Stripe uses cents
-                    'payment_status': 'completed',
+                    'payment_status': 'paid',
                     'payment_method': 'stripe',
                     'stripe_payment_intent_id': payment_intent['id'],
                     'stripe_charge_id': payment_intent.get('latest_charge'),
@@ -1088,7 +1188,7 @@ def handle_payment_success(payment_intent):
 
             # If payment already existed, update it
             if not created:
-                payment.payment_status = 'completed'
+                payment.payment_status = 'paid'
                 payment.stripe_payment_intent_id = payment_intent['id']
                 payment.stripe_charge_id = payment_intent.get('latest_charge')
                 payment.payment_date = timezone.now()
@@ -1126,9 +1226,11 @@ def handle_payment_success(payment_intent):
 
             # Update per_pick_value (recalculate based on pool)
             # This handles mixed $5 and $10 payments
-            if prize_pool.total_collected > 0:
+            # Prevent division by zero - only calculate if we have payments
+            if prize_pool.payment_count > 0 and prize_pool.total_collected > 0:
                 prize_pool.per_pick_value = prize_pool.weekly_pool_amount / (Decimal('4.00') * prize_pool.payment_count)
-
+            else:
+                prize_pool.per_pick_value = Decimal('0.00')
             prize_pool.save()
 
             # 5. Update user's lifetime payment total
@@ -1164,7 +1266,7 @@ def payment_count(self):
     '''Count of completed payments for this team/week'''
     return self.team.weekly_payments.filter(
         week=self.week,
-        payment_status='completed'
+        payment_status='paid'
     ).count()
 """
 
@@ -1210,7 +1312,7 @@ def payment_history(request):
     ).select_related('team', 'week').order_by('-created_at')
 
     # Calculate totals
-    total_paid = payments.filter(payment_status='completed').aggregate(
+    total_paid = payments.filter(payment_status='paid').aggregate(
         total=models.Sum('amount')
     )['total'] or Decimal('0.00')
 
@@ -1403,19 +1505,19 @@ def transaction_history(request):
     total_deposits = AccountTransaction.objects.filter(
         user=request.user,
         transaction_type='deposit',
-        status='completed'
+        status='paid'
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     total_withdrawals = AccountTransaction.objects.filter(
         user=request.user,
         transaction_type='withdrawal',
-        status='completed'
+        status='paid'
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     total_payments = AccountTransaction.objects.filter(
         user=request.user,
         transaction_type='payment',
-        status='completed'
+        status='paid'
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     context = {

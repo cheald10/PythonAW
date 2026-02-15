@@ -69,7 +69,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     ]
     list_filter = ['timezone', 'preferred_payout_method']
     search_fields = ['user__username', 'user__email', 'venmo_username', 'paypal_email']
-    readonly_fields = ['account_balance', 'stripe_customer_id']
+    readonly_fields = ['account_balance', 'stripe_customer_id', 'created_at', 'updated_at']
 
     fieldsets = (
         ('User Info', {
@@ -90,7 +90,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             )
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': (),
             'classes': ('collapse',)
         }),
     )
@@ -125,8 +125,8 @@ class TeamAdmin(admin.ModelAdmin):
     ]
     list_filter = ['season_year', 'weekly_fee', 'is_public', 'is_active']
     search_fields = ['name', 'captain__username', 'join_code']
-    readonly_fields = ['slug', 'join_code', 'created_at', 'updated_at']
-    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['join_code', 'created_at', 'updated_at']
+    prepopulated_fields = {}
 
     fieldsets = (
         ('Basic Info', {

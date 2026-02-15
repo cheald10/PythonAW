@@ -548,6 +548,10 @@ class Week(models.Model):
         """Check if deadline has passed"""
         return timezone.now() > self.deadline_utc
 
+    @property
+    def deadline_display(self):
+        """Return the deadline datetime for template formatting"""
+        return self.deadline_utc
 
 class MLBPlayer(models.Model):
     """MLB players from Stats API"""

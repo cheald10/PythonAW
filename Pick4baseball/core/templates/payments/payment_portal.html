@@ -4,7 +4,33 @@
 {% block title %}Payment Portal - Baseball Pick 4{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+
+<div class="container py-3">
+    <!-- Messages -->
+    <!--{# TEMPORARILY COMMENTED OUT
+    {% if messages %}
+        <div class="container py-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    #}-->
+
+    <!-- Quick Tip -->
+    <div class="alert alert-info">
+        <h5><i class="fas fa-info-circle me-2"></i>Quick Tip</h5>
+        <p class="mb-0">
+            Enable <strong>auto-pay</strong> in your
+            <a href="{% url 'account_settings' %}" class="alert-link">Account Settings</a>
+            to automatically deduct weekly fees from your account balance.
+            No more manual payments needed!
+        </p>
+    </div>
+
     <!-- Account Balance Card -->
     <div class="card border-primary mb-4">
         <div class="card-body">
@@ -37,15 +63,6 @@
             <h2 class="mb-4">
                 <i class="fas fa-credit-card"></i> Payment Portal
             </h2>
-
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
 
             <!-- Payment Summary Card -->
             <div class="card mb-4">

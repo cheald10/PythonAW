@@ -4,7 +4,31 @@
 {% block title %}Make Picks - Baseball Pick 4{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+
+<div class="container py-5">
+
+    <!-- Payment Status Banner -->
+    <div class="alert alert-success mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Week {{ week.week_number }} - Paid</strong>
+                <p class="mb-0 mt-1 small">
+                    Payment of ${{ payment.amount }} processed via {{ payment.get_payment_method_display }}
+                    {% if payment.payment_method == 'balance' %}
+                        (automatically deducted from your account balance)
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <small class="text-muted">
+                    Current Balance: <strong>${{ user.profile.account_balance|floatformat:2 }}</strong>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Header -->
     <div class="row">
         <div class="col-12">
             <h1>Make Your Weekly Picks</h1>
@@ -47,18 +71,18 @@
             <div class="card-body">
                 <!-- Search Box -->
                 <div class="mb-3">
-                    <input type="text" 
-                           class="form-control" 
-                           id="search_2b" 
+                    <input type="text"
+                           class="form-control"
+                           id="search_2b"
                            placeholder="🔍 Search by player name or team..."
                            autocomplete="off">
                     <small class="text-muted">Type to filter players • <span id="count_2b">{{ batters.count }} available</span></small>
                 </div>
-                
+
                 <select name="pick_2b" id="pick_2b" class="form-select form-select-lg" required>
                     <option value="">-- Select a Batter --</option>
                     {% for player in batters %}
-                        <option value="{{ player.id }}" 
+                        <option value="{{ player.id }}"
                                 data-name="{{ player.full_name|lower }}"
                                 data-team="{{ player.team_name|lower }}"
                                 {% if existing_picks.pick_2b == player.id %}selected{% endif %}>
@@ -81,14 +105,14 @@
             <div class="card-body">
                 <!-- Search Box -->
                 <div class="mb-3">
-                    <input type="text" 
-                           class="form-control" 
-                           id="search_hr" 
+                    <input type="text"
+                           class="form-control"
+                           id="search_hr"
                            placeholder="🔍 Search by player name or team..."
                            autocomplete="off">
                     <small class="text-muted">Type to filter players • <span id="count_hr">{{ batters.count }} available</span></small>
                 </div>
-                
+
                 <select name="pick_hr" id="pick_hr" class="form-select form-select-lg" required>
                     <option value="">-- Select a Batter --</option>
                     {% for player in batters %}
@@ -115,14 +139,14 @@
             <div class="card-body">
                 <!-- Search Box -->
                 <div class="mb-3">
-                    <input type="text" 
-                           class="form-control" 
-                           id="search_swp" 
+                    <input type="text"
+                           class="form-control"
+                           id="search_swp"
                            placeholder="🔍 Search by player name or team..."
                            autocomplete="off">
                     <small class="text-muted">Type to filter players • <span id="count_swp">{{ pitchers.count }} available</span></small>
                 </div>
-                
+
                 <select name="pick_swp" id="pick_swp" class="form-select form-select-lg" required>
                     <option value="">-- Select a Pitcher --</option>
                     {% for player in pitchers %}
@@ -149,14 +173,14 @@
             <div class="card-body">
                 <!-- Search Box -->
                 <div class="mb-3">
-                    <input type="text" 
-                           class="form-control" 
-                           id="search_s" 
+                    <input type="text"
+                           class="form-control"
+                           id="search_s"
                            placeholder="🔍 Search by player name or team..."
                            autocomplete="off">
                     <small class="text-muted">Type to filter players • <span id="count_s">{{ pitchers.count }} available</span></small>
                 </div>
-                
+
                 <select name="pick_s" id="pick_s" class="form-select form-select-lg" required>
                     <option value="">-- Select a Pitcher --</option>
                     {% for player in pitchers %}
@@ -194,26 +218,26 @@ const deadline = new Date('{{ week.deadline_utc|date:"c" }}').getTime();
 function updateCountdown() {
     const now = new Date().getTime();
     const distance = deadline - now;
-    
+
     const days = Math.floor(distance / (1000 * 60 * 60 * 24));
     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
+
     const countdownElement = document.getElementById('countdown-timer');
     const alertElement = document.getElementById('countdown-alert');
     const submitButton = document.querySelector('button[type="submit"]');
-    
+
     if (distance < 0) {
         // Deadline passed
         countdownElement.innerHTML = 'DEADLINE PASSED';
         countdownElement.className = 'badge bg-danger fs-6';
         alertElement.className = 'alert alert-danger';
-        
+
         // Disable form
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fas fa-lock"></i> Picks Locked';
-        
+
         // Disable all selects and search boxes
         document.querySelectorAll('select, input[type="text"]').forEach(el => {
             el.disabled = true;
@@ -250,21 +274,21 @@ function setupSearch(searchInputId, selectId, countId) {
     const select = document.getElementById(selectId);
     const countSpan = document.getElementById(countId);
     const options = Array.from(select.options);
-    
+
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
         let visibleCount = 0;
-        
+
         options.forEach(option => {
             if (option.value === '') {
                 // Keep the placeholder option
                 option.style.display = '';
                 return;
             }
-            
+
             const playerName = option.getAttribute('data-name') || '';
             const teamName = option.getAttribute('data-team') || '';
-            
+
             if (playerName.includes(searchTerm) || teamName.includes(searchTerm)) {
                 option.style.display = '';
                 visibleCount++;
@@ -272,7 +296,7 @@ function setupSearch(searchInputId, selectId, countId) {
                 option.style.display = 'none';
             }
         });
-        
+
         // Update count
         if (searchTerm) {
             countSpan.textContent = `${visibleCount} found`;
@@ -282,7 +306,7 @@ function setupSearch(searchInputId, selectId, countId) {
             countSpan.parentElement.className = 'text-muted';
         }
     });
-    
+
     // Clear search when selection is made
     select.addEventListener('change', function() {
         if (this.value) {
@@ -299,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupSearch('search_hr', 'pick_hr', 'count_hr');
     setupSearch('search_swp', 'pick_swp', 'count_swp');
     setupSearch('search_s', 'pick_s', 'count_s');
-    
+
     const form = document.querySelector('form');
     const selects = {
         pick2b: document.getElementById('pick_2b'),
@@ -307,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
         pickSwp: document.getElementById('pick_swp'),
         pickS: document.getElementById('pick_s')
     };
-    
+
     // Add change event listeners for visual feedback
     Object.values(selects).forEach(select => {
         select.addEventListener('change', function() {
@@ -320,11 +344,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     form.addEventListener('submit', function(e) {
         let isValid = true;
         let errorMessage = '';
-        
+
         // Check all picks selected
         Object.entries(selects).forEach(([key, select]) => {
             if (!select.value) {
@@ -333,24 +357,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMessage = 'Please select all 4 picks before submitting.';
             }
         });
-        
+
         if (!isValid) {
             e.preventDefault();
             alert(errorMessage);
             return false;
         }
-        
+
         // Optional: Check for duplicates
         const values = Object.values(selects).map(s => s.value);
         const uniqueValues = new Set(values);
-        
+
         // Uncomment to enforce no duplicate players
         // if (values.length !== uniqueValues.size) {
         //     e.preventDefault();
         //     alert('You cannot select the same player for multiple categories.');
         //     return false;
         // }
-        
+
         // Confirm submission
         const confirmMsg = 'Are you sure you want to submit these picks?\n\n' +
             `2 Hits: ${selects.pick2b.options[selects.pick2b.selectedIndex].text}\n` +
@@ -358,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `Starting Winning Pitcher: ${selects.pickSwp.options[selects.pickSwp.selectedIndex].text}\n` +
             `Save: ${selects.pickS.options[selects.pickS.selectedIndex].text}\n\n` +
             'You can edit these picks before the deadline.';
-        
+
         return confirm(confirmMsg);
     });
 });

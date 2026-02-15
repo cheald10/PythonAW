@@ -180,7 +180,7 @@ class AccountInfoForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['timezone', 'phone_number']
+        fields = ['timezone', 'phone_number', 'auto_pay_from_balance']
         widgets = {
             'phone_number': forms.TextInput(attrs={
                 'class': 'form-control',

@@ -274,6 +274,20 @@ def account_settings(request):
         # Determine which form was submitted
         form_type = request.POST.get('form_type')
 
+        if form_type == 'account_info':
+            form = AccountInfoForm(request.POST, instance=request.user.profile)
+            if form.is_valid():
+                form.save()
+
+                # Check if auto-pay setting changed
+                auto_pay = form.cleaned_data.get('auto_pay_from_balance')
+                if auto_pay:
+                    messages.success(request, "✓ Auto-pay enabled. Weekly fees will be deducted automatically from your balance when you make picks.")
+                else:
+                    messages.success(request, "✓ Auto-pay disabled. You'll need to manually pay your weekly fees.")
+
+                return redirect('account_settings')
+
         if form_type == 'profile_picture':
             form = ProfilePictureForm(
                 request.POST,
@@ -458,7 +472,10 @@ def make_picks(request):
     """
     Make/edit weekly picks view.
     Allows users to select their 4 weekly picks.
+    ENFORCES PAYMENT BEFORE PICKS.
     """
+    user = request.user
+
     # Get current active week
     current_week = Week.objects.filter(is_active=True).first()
 
@@ -471,11 +488,49 @@ def make_picks(request):
         messages.error(request, "The deadline for this week has passed.")
         return redirect('home')
 
+    # Get user's team
+    team_membership = TeamMember.objects.filter(user=user).first()
+    if not team_membership:
+        messages.error(request, "You must be on a team to make picks.")
+        return redirect('home')
+
+    user_team = team_membership.team
+
+    # ==========================================
+    # PAYMENT ENFORCEMENT - CRITICAL SECTION
+    # ==========================================
+
+    # Check if user has already paid for this week
+    existing_payment = WeeklyPayment.objects.filter(
+        user=user,
+        team=user_team,
+        week=current_week,
+        payment_status='completed'
+    ).first()
+
+    if not existing_payment:
+        # User hasn't paid yet - try auto-deduct if enabled
+        success, payment, message = BalanceService.auto_deduct_weekly_fee(user, user_team, current_week)
+
+        if success:
+            # Auto-deduct succeeded
+            messages.success(request, f"✓ {message}")
+            existing_payment = payment  # Set this so we can use it in context later
+        else:
+            # Auto-deduct failed (insufficient funds or disabled)
+            messages.warning(request, message)
+            messages.info(request, "Redirecting to payment page...")
+            return redirect('payment_portal')
+
+    # ==========================================
+    # USER HAS PAID - CONTINUE WITH PICKS
+    # ==========================================
+
     # Get existing picks for user (for editing)
     existing_picks = {}
     for category_code in ['2B', 'HR', 'SWP', 'S']:
         pick = Pick.objects.filter(
-            user=request.user,
+            user=user,
             week=current_week,
             category__code=category_code
         ).first()
@@ -483,16 +538,6 @@ def make_picks(request):
             existing_picks[f'pick_{category_code.lower()}'] = pick.player.id
 
     if request.method == 'POST':
-        # Get user's team
-        from core.models import TeamMember
-        team_membership = TeamMember.objects.filter(user=request.user).first()
-
-        if not team_membership:
-            messages.error(request, "You must be on a team to make picks.")
-            return redirect('home')
-
-        user_team = team_membership.team
-
         # Get form data
         pick_2b_id = request.POST.get('pick_2b')
         pick_hr_id = request.POST.get('pick_hr')
@@ -519,7 +564,7 @@ def make_picks(request):
 
             # Create or update picks (including team_id)
             Pick.objects.update_or_create(
-                user=request.user,
+                user=user,
                 week=current_week,
                 category=cat_2b,
                 defaults={
@@ -530,7 +575,7 @@ def make_picks(request):
             )
 
             Pick.objects.update_or_create(
-                user=request.user,
+                user=user,
                 week=current_week,
                 category=cat_hr,
                 defaults={
@@ -541,7 +586,7 @@ def make_picks(request):
             )
 
             Pick.objects.update_or_create(
-                user=request.user,
+                user=user,
                 week=current_week,
                 category=cat_swp,
                 defaults={
@@ -552,7 +597,7 @@ def make_picks(request):
             )
 
             Pick.objects.update_or_create(
-                user=request.user,
+                user=user,
                 week=current_week,
                 category=cat_s,
                 defaults={
@@ -563,7 +608,7 @@ def make_picks(request):
             )
 
             messages.success(request, "Your picks have been saved successfully!")
-            logger.info(f"User {request.user.username} saved picks for Week {current_week.week_number}")
+            logger.info(f"User {user.username} saved picks for Week {current_week.week_number}")
             return redirect('home')
 
         except PickCategory.DoesNotExist:
@@ -572,7 +617,7 @@ def make_picks(request):
             return redirect('home')
         except Exception as e:
             messages.error(request, "An error occurred while saving your picks. Please try again.")
-            logger.error(f"Error saving picks for {request.user.username}: {str(e)}")
+            logger.error(f"Error saving picks for {user.username}: {str(e)}")
             return redirect('make_picks')
 
     # GET request - show form
@@ -592,6 +637,8 @@ def make_picks(request):
         'batters': batters,
         'pitchers': pitchers,
         'existing_picks': existing_picks,
+        'payment': existing_payment,  # Add payment info to context
+        'user_team': user_team,  # Add team info to context
     }
 
     return render(request, 'make_picks.html', context)

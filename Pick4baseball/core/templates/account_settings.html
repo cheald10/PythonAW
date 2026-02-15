@@ -293,6 +293,29 @@
                             <input type="text" class="form-control" value="{{ user.date_joined|date:'F j, Y' }}" readonly>
                         </div>
 
+                        <!-- NEW: Auto-Pay Setting -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="autoPayToggle"
+                                    name="auto_pay_from_balance"
+                                    {% if profile.auto_pay_from_balance %}checked{% endif %}
+                                >
+                                <label class="form-check-label" for="autoPayToggle">
+                                    <strong>Auto-pay weekly fees from account balance</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                When enabled, your weekly team fees will be automatically deducted from your account balance if you have sufficient funds.
+                                You can always pay manually if you prefer.
+                            </small>
+                            <small class="text-muted d-block mt-1">
+                                <strong>Current balance: ${{ profile.account_balance|floatformat:2 }}</strong>
+                            </small>
+                        </div>
+
                         <button type="submit" class="btn btn-info text-white">
                             <i class="fas fa-save"></i> Save Account Info
                         </button>

@@ -68,6 +68,11 @@ class UserProfile(models.Model):
         help_text='When was the last low balance alert sent?'
     )
 
+    auto_pay_from_balance = models.BooleanField(
+        default=True,
+        help_text='Automatically deduct weekly fees from account balance if sufficient funds available'
+    )
+
     profile_picture = models.ImageField(
         upload_to='profile_pictures/',
         blank=True,

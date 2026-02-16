@@ -1,0 +1,25 @@
+PICKS RECEIVED - WEEK {{ week_number }}
+========================================
+
+Hi {{ user.username }},
+
+Your picks have been successfully submitted!
+
+YOUR PICKS:
+{% for pick in picks %}
+Game {{ forloop.counter }}: {{ pick.game }}
+Your pick: {{ pick.team }}
+
+{% endfor %}
+
+DEADLINE: {{ deadline }}
+You can change your picks anytime before the deadline.
+
+Edit your picks: {{ edit_picks_url }}
+
+Good luck!
+
+---
+Baseball Pick 4
+Account Settings: {{ account_url }}
+Support: {{ support_url }}

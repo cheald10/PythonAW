@@ -101,7 +101,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">Choose how you'd like to add money to your account balance</p>
-                    
+
                     <div class="row g-3">
                         <!-- Stripe (Credit/Debit Card) -->
                         <div class="col-md-6">
@@ -116,7 +116,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- PayPal -->
                         <div class="col-md-6">
                             <div class="card border-info h-100">
@@ -153,7 +153,7 @@
                             <option value="custom">Custom Amount</option>
                         </select>
                     </div>
-                    
+
                     <div id="stripe-custom-amount" class="mb-3" style="display: none;">
                         <label class="form-label">Enter Custom Amount</label>
                         <div class="input-group">
@@ -161,7 +161,7 @@
                             <input type="number" class="form-control" id="stripe-custom-input" min="5" max="500" step="0.01" placeholder="0.00">
                         </div>
                     </div>
-                    
+
                     <button class="btn btn-primary" onclick="processStripeDeposit()">
                         <i class="fas fa-credit-card me-2"></i>
                         Continue to Payment
@@ -190,10 +190,10 @@
                             <option value="100">$100.00</option>
                         </select>
                     </div>
-                    
+
                     <!-- PayPal button container -->
                     <div id="paypal-button-container"></div>
-                    
+
                     <button class="btn btn-secondary mt-3" onclick="hidePayPalPayment()">
                         Cancel
                     </button>
@@ -587,9 +587,96 @@ function hideError() {
     errorDiv.style.display = 'none';
 }
 
-// Withdrawal Function (placeholder)
+function showSuccess(message) {
+    const successDiv = document.getElementById('withdrawalMessage');
+    if (successDiv) {
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        successDiv.classList.remove('d-none');
+        setTimeout(() => successDiv.classList.add('d-none'), 5000);
+    }
+}
+
+// Withdrawal Function
 function submitWithdrawal() {
-    alert('Withdrawal feature coming soon!');
+    const amount = document.getElementById('withdrawAmount').value;
+    const method = document.getElementById('withdrawMethod').value;
+
+    if (!amount || parseFloat(amount) <= 0) {
+        showError('Please enter a valid withdrawal amount');
+        return;
+    }
+
+    if (!method) {
+        showError('Please select a withdrawal method');
+        return;
+    }
+
+    // Confirm withdrawal
+    if (!confirm(`Withdraw $${amount} via ${method}?`)) {
+        return;
+    }
+
+    // Show loading state
+    const withdrawBtn = document.querySelector('button[onclick="submitWithdrawal()"]');
+    const originalText = withdrawBtn.textContent;
+    withdrawBtn.disabled = true;
+    withdrawBtn.textContent = 'Processing...';
+
+    // Submit withdrawal request
+    fetch("{% url 'request_withdrawal' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            amount: amount,
+            method: method,
+            notes: ''
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Withdrawal processed! Check your email for confirmation.');
+            // Update balance display if it exists
+            const balanceElement = document.querySelector('.account-balance');
+            if (balanceElement) {
+                balanceElement.textContent = `$${data.new_balance}`;
+            }
+            // Clear form
+            document.getElementById('withdrawAmount').value = '';
+            // Reload page after 2 seconds to show updated balance
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showError(data.error || 'Withdrawal failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('An error occurred processing your withdrawal');
+    })
+    .finally(() => {
+        withdrawBtn.disabled = false;
+        withdrawBtn.textContent = originalText;
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 </script>
 
@@ -604,7 +691,7 @@ function submitWithdrawal() {
 function showStripePayment() {
     document.getElementById('stripe-section').style.display = 'block';
     document.getElementById('paypal-section').style.display = 'none';
-    
+
     // Scroll to section
     document.getElementById('stripe-section').scrollIntoView({ behavior: 'smooth' });
 }
@@ -616,10 +703,10 @@ function hideStripePayment() {
 function showPayPalPayment() {
     document.getElementById('paypal-section').style.display = 'block';
     document.getElementById('stripe-section').style.display = 'none';
-    
+
     // Render PayPal buttons
     renderPayPalButtons();
-    
+
     // Scroll to section
     document.getElementById('paypal-section').scrollIntoView({ behavior: 'smooth' });
 }
@@ -645,7 +732,7 @@ document.getElementById('stripe-amount').addEventListener('change', function() {
 
 function processStripeDeposit() {
     let amount = document.getElementById('stripe-amount').value;
-    
+
     if (amount === 'custom') {
         amount = document.getElementById('stripe-custom-input').value;
         if (!amount || parseFloat(amount) < 5) {
@@ -653,7 +740,7 @@ function processStripeDeposit() {
             return;
         }
     }
-    
+
     // TODO: Open Stripe payment modal for deposit
     // This would create a PaymentIntent for the deposit amount
     alert('Stripe deposit integration - Amount: $' + amount);
@@ -667,10 +754,10 @@ function processStripeDeposit() {
 function renderPayPalButtons() {
     // Clear any existing buttons
     document.getElementById('paypal-button-container').innerHTML = '';
-    
+
     // Get selected amount
     var amount = document.getElementById('paypal-amount').value;
-    
+
     // Render PayPal button
     paypal.Buttons({
         style: {
@@ -679,7 +766,7 @@ function renderPayPalButtons() {
             layout: 'vertical',
             label: 'pay'
         },
-        
+
         createOrder: function(data, actions) {
             return actions.order.create({
                 purchase_units: [{
@@ -691,13 +778,13 @@ function renderPayPalButtons() {
                 }]
             });
         },
-        
+
         onApprove: function(data, actions) {
             return actions.order.capture().then(function(details) {
                 // Show processing message
                 var container = document.getElementById('paypal-button-container');
                 container.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>';
-                
+
                 // Send to backend to verify and credit account
                 fetch('{% url "process_paypal_payment" %}', {
                     method: 'POST',
@@ -723,7 +810,7 @@ function renderPayPalButtons() {
                                 New balance: $${result.new_balance}
                             </div>
                         `;
-                        
+
                         // Reload page after 2 seconds
                         setTimeout(() => {
                             window.location.reload();
@@ -750,7 +837,7 @@ function renderPayPalButtons() {
                 });
             });
         },
-        
+
         onError: function(err) {
             console.error('PayPal error:', err);
             var container = document.getElementById('paypal-button-container');

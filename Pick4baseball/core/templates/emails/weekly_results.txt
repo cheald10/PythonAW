@@ -1,0 +1,28 @@
+Hi {{ user.username }},
+
+The results are in for Week {{ week_number }}!
+
+YOUR SCORE: {{ correct_picks }}/{{ total_games }}
+
+{% if correct_picks == 4 %}
+🎉 PERFECT WEEK! 🎉
+{% elif correct_picks == 3 %}
+Great job! So close!
+{% elif correct_picks == 2 %}
+Nice work!
+{% elif correct_picks == 1 %}
+Better luck next week!
+{% else %}
+Tough week. Get 'em next time!
+{% endif %}
+
+View full leaderboard: {{ leaderboard_url }}
+
+Make picks for next week: {{ leaderboard_url }}
+
+Good luck! 🍀
+
+---
+Baseball Pick 4 - Weekly Sports Picks Pool
+Account Settings: {{ account_url }}
+Support: {{ support_url }}

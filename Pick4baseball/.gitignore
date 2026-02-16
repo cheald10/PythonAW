@@ -10,3 +10,7 @@ create_test_data.py
 *.secret
 secrets.pystripe
 stripe_*.tar.gz
+test_emails.py
+test_week_completion.py
+*.backup*
+stripe

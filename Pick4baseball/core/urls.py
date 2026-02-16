@@ -65,6 +65,9 @@ urlpatterns = [
     path('payments/pay-with-balance/', views.pay_with_balance, name='pay_with_balance'),
     path('payments/withdraw/', views.request_withdrawal, name='request_withdrawal'),
     path('payments/transactions/', views.transaction_history, name='transaction_history'),
+
+     # Admin functions
+    path('admin/week/<int:week_id>/complete/', views.admin_complete_week, name='admin_complete_week'),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawal Processed</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">💸 Withdrawal Processed</h1>
+    </div>
+    
+    <!-- Main Content -->
+    <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+        
+        <p style="font-size: 16px; color: #333;">
+            Hi {{ user.username }},
+        </p>
+        
+        <p style="font-size: 16px; color: #333;">
+            Your withdrawal request has been processed successfully.
+        </p>
+        
+        <!-- Withdrawal Details -->
+        <div style="background: white; padding: 25px; border-radius: 10px; margin: 20px 0; border: 2px solid #17a2b8;">
+            <h3 style="color: #17a2b8; margin: 0 0 20px 0;">Withdrawal Details</h3>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd;"><strong>Amount:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd; text-align: right; font-size: 20px; color: #28a745; font-weight: bold;">
+                        ${{ amount }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd;"><strong>Method:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd; text-align: right;">
+                        {{ payout_method }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd;"><strong>Destination:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd; text-align: right;">
+                        {{ destination }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd;"><strong>Transaction ID:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 12px;">
+                        {{ transaction_id }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0;"><strong>Date:</strong></td>
+                    <td style="padding: 12px 0; text-align: right;">
+                        {{ date }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Processing Timeline -->
+        <div style="background: #d1ecf1; padding: 20px; border-radius: 10px; border-left: 4px solid #17a2b8; margin: 20px 0;">
+            <h4 style="color: #0c5460; margin: 0 0 10px 0;">⏱️ Processing Timeline</h4>
+            <p style="color: #0c5460; margin: 0;">
+                {% if payout_method == 'PayPal' or payout_method == 'Venmo' %}
+                Funds typically arrive within 1-2 business days.
+                {% else %}
+                Bank transfers typically take 2-5 business days.
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Support -->
+        <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <h4 style="color: #333; margin: 0 0 10px 0;">Need Help?</h4>
+            <p style="color: #666; margin: 0; font-size: 14px;">
+                If you have any questions about this withdrawal, please contact us:
+            </p>
+            <p style="margin: 10px 0;">
+                <a href="mailto:support@pick4baseball.com" style="color: #667eea; text-decoration: none;">support@pick4baseball.com</a>
+            </p>
+        </div>
+        
+        <!-- CTA -->
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{{ transaction_history_url }}" style="display: inline-block; background: #667eea; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                View Transaction History
+            </a>
+        </div>
+        
+    </div>
+    
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 12px;">
+        <p>Baseball Pick 4 - Weekly Sports Picks Pool</p>
+        <p>This is an automated confirmation email for record-keeping purposes.</p>
+        <p>
+            <a href="{{ account_url }}" style="color: #667eea; text-decoration: none;">Account Settings</a> | 
+            <a href="{{ support_url }}" style="color: #667eea; text-decoration: none;">Support</a>
+        </p>
+    </div>
+    
+</body>
+</html>

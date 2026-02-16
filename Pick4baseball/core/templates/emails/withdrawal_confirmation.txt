@@ -1,0 +1,31 @@
+WITHDRAWAL PROCESSED
+========================================
+
+Hi {{ user.username }},
+
+Your withdrawal request has been processed successfully.
+
+WITHDRAWAL DETAILS:
+- Amount: ${{ amount }}
+- Method: {{ payout_method }}
+- Destination: {{ destination }}
+- Transaction ID: {{ transaction_id }}
+- Date: {{ date }}
+
+PROCESSING TIMELINE:
+{% if payout_method == 'PayPal' or payout_method == 'Venmo' %}
+Funds typically arrive within 1-2 business days.
+{% else %}
+Bank transfers typically take 2-5 business days.
+{% endif %}
+
+NEED HELP?
+Contact us at support@pick4baseball.com
+
+View transaction history: {{ transaction_history_url }}
+
+---
+Baseball Pick 4
+This is an automated confirmation email for record-keeping purposes.
+Account Settings: {{ account_url }}
+Support: {{ support_url }}

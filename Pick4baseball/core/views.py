@@ -26,6 +26,12 @@ from django.db.models import (
 from datetime import timedelta
 from decimal import Decimal
 from .email_utils import send_verification_email
+from .email_views import (
+    send_welcome_email,
+    send_picks_submitted_email,
+    send_withdrawal_confirmation_email,
+    send_weekly_results_to_all_users
+)
 from .models import (
     UserProfile, Week, MLBPlayer, Pick, PickCategory, Team, TeamMember, UserProfile,
     WeeklyPayment, WeeklyPrizePool, AccountTransaction, WeeklyPayout
@@ -113,21 +119,19 @@ def register(request):
             email_sent = send_verification_email(request, user)
 
             if email_sent:
+                # Also send welcome email (non-blocking - don't fail registration if it fails)
+                try:
+                    send_welcome_email(user)
+                    logger.info(f"Welcome email sent to {user.email}")
+                except Exception as e:
+                    logger.error(f"Failed to send welcome email to {user.email}: {e}")
+
                 messages.success(
                     request,
                     f'Account created for {username}! Please check your email to verify your account.'
                 )
                 logger.info(f"Verification email sent to {user.email}")
                 return redirect('verification_sent')
-            else:
-                # Email failed to send, but account was created
-                messages.warning(
-                    request,
-                    f'Account created for {username}, but there was an issue sending the verification email. '
-                    f'Please use the "Resend Verification" option.'
-                )
-                logger.error(f"Failed to send verification email to {user.email}")
-                return redirect('resend_verification')
         else:
             messages.error(request, 'Please correct the errors below.')
             logger.warning(f"Registration form validation failed: {form.errors}")
@@ -630,7 +634,22 @@ def make_picks(request):
                 }
             )
 
-            messages.success(request, "Your picks have been saved successfully!")
+            # Get all user's picks for the week to include in confirmation email
+            user_picks = Pick.objects.filter(
+                user=user,
+                week=current_week
+            ).select_related('player', 'category')
+
+            # Send confirmation email (non-blocking)
+            try:
+                send_picks_submitted_email(user, current_week, user_picks)
+                logger.info(f"Picks confirmation email sent to {user.email}")
+                messages.success(request, "Your picks have been saved successfully! Check your email for confirmation.")
+            except Exception as e:
+                logger.error(f"Failed to send picks confirmation email to {user.email}: {e}")
+                # Still show success message even if email fails
+                messages.success(request, "Your picks have been saved successfully!")
+
             logger.info(f"User {user.username} saved picks for Week {current_week.week_number}")
             return redirect('home')
 
@@ -1223,57 +1242,24 @@ def request_withdrawal(request):
         )
 
         if success:
-            logger.info(f"Withdrawal requested: {request.user.username} - ${amount} to {method}")
+            # Send withdrawal confirmation email (non-blocking)
+            try:
+                send_withdrawal_confirmation_email(request.user, transaction_record)
+                logger.info(f"Withdrawal confirmation email sent to {request.user.email}")
+            except Exception as e:
+                logger.error(f"Failed to send withdrawal confirmation to {request.user.email}: {e}")
+                # Don't fail the withdrawal if email fails
+
             return JsonResponse({
                 'success': True,
                 'transaction_id': transaction_record.id,
                 'new_balance': str(BalanceService.get_balance(request.user)),
                 'message': message
             })
-        else:
-            return JsonResponse({'error': message}, status=400)
 
     except Exception as e:
         logger.error(f"Withdrawal request error: {str(e)}")
         return JsonResponse({'error': f'Withdrawal failed: {str(e)}'}, status=500)
-
-@login_required
-def transaction_history(request):
-    """
-    Display user's account transaction history
-    """
-    transactions = AccountTransaction.objects.filter(
-        user=request.user
-    ).select_related('related_payment', 'related_payout').order_by('-created_at')
-
-    # Calculate summary stats
-    total_deposits = AccountTransaction.objects.filter(
-        user=request.user,
-        transaction_type='deposit',
-        status='paid'
-    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
-
-    total_withdrawals = AccountTransaction.objects.filter(
-        user=request.user,
-        transaction_type='withdrawal',
-        status='paid'
-    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
-
-    total_payments = AccountTransaction.objects.filter(
-        user=request.user,
-        transaction_type='payment',
-        status='paid'
-    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
-
-    context = {
-        'transactions': transactions,
-        'current_balance': request.user.profile.account_balance,
-        'total_deposits': total_deposits,
-        'total_withdrawals': total_withdrawals,
-        'total_payments': total_payments,
-    }
-
-    return render(request, 'payments/transaction_history.html', context)
 
 @csrf_exempt
 @require_POST
@@ -1618,51 +1604,6 @@ def pay_with_balance(request):
         return JsonResponse({'error': f'Payment failed: {str(e)}'}, status=500)
 
 
-@login_required
-@require_POST
-def request_withdrawal(request):
-    """
-    User requests withdrawal of account balance
-    """
-    import json
-
-    try:
-        data = json.loads(request.body)
-        amount = Decimal(str(data.get('amount', '0')))
-        method = data.get('method')
-        notes = data.get('notes', '')
-
-        if method not in ['stripe', 'paypal', 'venmo']:
-            return JsonResponse({'error': 'Invalid withdrawal method'}, status=400)
-
-        # Validate user has payment method configured
-        profile = request.user.profile
-        if method == 'paypal' and not profile.paypal_email:
-            return JsonResponse({'error': 'PayPal email not configured in account settings'}, status=400)
-        if method == 'venmo' and not profile.venmo_username:
-            return JsonResponse({'error': 'Venmo username not configured in account settings'}, status=400)
-
-        success, transaction_record, message = BalanceService.process_withdrawal(
-            user=request.user,
-            amount=amount,
-            withdrawal_method=method,
-            notes=notes
-        )
-
-        if success:
-            return JsonResponse({
-                'success': True,
-                'transaction_id': transaction_record.id,
-                'new_balance': str(BalanceService.get_balance(request.user)),
-                'message': message
-            })
-        else:
-            return JsonResponse({'error': message}, status=400)
-
-    except Exception as e:
-        logger.error(f"Withdrawal request error: {str(e)}")
-        return JsonResponse({'error': f'Withdrawal failed: {str(e)}'}, status=500)
-
 
 @login_required
 def transaction_history(request):
@@ -1703,3 +1644,70 @@ def transaction_history(request):
     }
 
     return render(request, 'payments/transaction_history.html', context)
+
+@login_required
+def admin_complete_week(request, week_id):
+    """
+    Admin function to mark a week as complete and send results emails to all users.
+    Only accessible by superusers/staff.
+
+    Usage: Called from admin panel after scoring is done for a week.
+    Marks week complete and sends result emails to all players.
+    """
+    # Check admin permissions
+    if not request.user.is_staff and not request.user.is_superuser:
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('home')
+
+    week = get_object_or_404(Week, id=week_id)
+
+    if request.method == 'POST':
+        try:
+            # Mark week as complete
+            week.is_complete = True
+            week.is_active = False
+            week.save()
+
+            logger.info(f"Week {week.week_number} marked complete by {request.user.username}")
+
+            # Send results emails to all users
+            email_stats = send_weekly_results_to_all_users(week)
+
+            messages.success(
+                request,
+                f"Week {week.week_number} marked complete! "
+                f"Results emails: {email_stats['sent']} sent successfully, "
+                f"{email_stats['failed']} failed, "
+                f"{email_stats['total']} total users."
+            )
+            logger.info(
+                f"Week {week.week_number} completed. "
+                f"Email stats: {email_stats['sent']}/{email_stats['total']} sent"
+            )
+
+        except Exception as e:
+            messages.error(request, f"Error completing week: {str(e)}")
+            logger.error(f"Error in admin_complete_week for week {week_id}: {e}", exc_info=True)
+
+        # Redirect to wherever your admin dashboard is
+        # Change this to match your actual admin page URL
+        return redirect('home')  # Change to 'admin_dashboard' or whatever you use
+
+    # GET request - show confirmation page
+    from django.db.models import Count
+
+    # Get stats about this week
+    total_picks = Pick.objects.filter(week=week).count()
+    total_users = Pick.objects.filter(week=week).values('user').distinct().count()
+    users_with_4_picks = Pick.objects.filter(week=week).values('user').annotate(
+        pick_count=Count('id')
+    ).filter(pick_count=4).count()
+
+    context = {
+        'week': week,
+        'total_picks': total_picks,
+        'total_users': total_users,
+        'users_with_4_picks': users_with_4_picks,
+    }
+
+    return render(request, 'admin/complete_week_confirm.html', context)

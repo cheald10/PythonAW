@@ -1,0 +1,41 @@
+WELCOME TO BASEBALL PICK 4!
+========================================
+
+Hi {{ user.username }}!
+
+Thanks for joining Baseball Pick 4! You're now part of a competitive sports picks pool where you can test your baseball knowledge and win money every week.
+
+GET STARTED IN 3 EASY STEPS:
+
+1. Join a team or create your own: {{ team_url }}
+2. Make your picks for this week: {{ picks_url }}
+3. Add funds to your account: {{ payment_url }}
+
+HOW TO PLAY & WIN:
+
+Each week, pick 4 MLB games and predict the winners. Get all 4 correct to win the weekly prize! If nobody wins, the pot rolls over and grows bigger.
+
+Read full rules & payouts: {{ rules_url }}
+
+WEEKLY ENTRY FEE:
+
+Choose your entry level each week:
+- $5/week - Smaller stakes, smaller prizes
+- $10/week - Standard entry, bigger prizes
+
+All entry fees go into the weekly prize pool. Win big or watch the pot grow!
+
+START PLAYING NOW: {{ get_started_url }}
+
+NEED HELP?
+
+Check out our Rules Page for complete details: {{ rules_url }}
+Or contact us if you have questions: {{ support_url }}
+
+Good luck and welcome to the team! ⚾
+
+---
+Baseball Pick 4 - Weekly Sports Picks Pool
+Account Settings: {{ account_url }}
+Rules: {{ rules_url }}
+Support: {{ support_url }}

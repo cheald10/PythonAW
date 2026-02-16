@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    'core',
+    'core.apps.CoreConfig',
     'widget_tweaks',
     'django.contrib.humanize',
 ]
@@ -197,6 +197,9 @@ else:
     print("PYTHON RUNTIME:", sys.executable)
 # Email verification timeout
 EMAIL_VERIFICATION_TIMEOUT_HOURS = 24
+
+# Site domain for email links
+SITE_DOMAIN = 'cheald10.pythonanywhere.com'
 
 # ==============================================================================
 # DJANGO SITES FRAMEWORK

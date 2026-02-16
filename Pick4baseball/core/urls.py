@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from . import views, views_leaderboard
+from . import prepay_views
 from . import verification_views
 
 urlpatterns = [
@@ -65,6 +66,29 @@ urlpatterns = [
     path('payments/pay-with-balance/', views.pay_with_balance, name='pay_with_balance'),
     path('payments/withdraw/', views.request_withdrawal, name='request_withdrawal'),
     path('payments/transactions/', views.transaction_history, name='transaction_history'),
+    # Prepay
+    # Payment Preference Onboarding
+    path('onboarding/payment-preference/',
+         prepay_views.payment_preference_onboarding,
+         name='payment_preference_onboarding'),
+
+    # Season Prepay
+    path('onboarding/season-prepay/',
+         prepay_views.season_prepay_payment,
+         name='season_prepay_payment'),
+
+    path('payments/season-prepay-success/',
+         prepay_views.season_prepay_success,
+         name='season_prepay_success'),
+
+    # Custom Amount Prepay
+    path('onboarding/custom-amount/',
+         prepay_views.custom_amount_payment,
+         name='custom_amount_payment'),
+
+    path('payments/custom-prepay-success/',
+         prepay_views.custom_prepay_success,
+         name='custom_prepay_success'),
 
      # Admin functions
     path('admin/week/<int:week_id>/complete/', views.admin_complete_week, name='admin_complete_week'),

@@ -38,11 +38,13 @@ class UserProfile(models.Model):
         on_delete=models.CASCADE,
         related_name='profile'
     )
+
     timezone = models.CharField(
         max_length=50,
         default='America/Chicago',
         help_text='User timezone for deadline calculations'
     )
+
     phone_number = models.CharField(max_length=20, blank=True, null=True)
 
     # Account balance system
@@ -52,27 +54,62 @@ class UserProfile(models.Model):
         default=Decimal('0.00'),
         help_text='Current account balance available for payments'
     )
+
     low_balance_threshold = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal('15.00'),
         help_text='Alert user when balance drops below this amount'
     )
+
     low_balance_alert_sent = models.BooleanField(
         default=False,
         help_text='Has low balance alert been sent for current balance?'
     )
+
     last_low_balance_alert = models.DateTimeField(
         null=True,
         blank=True,
         help_text='When was the last low balance alert sent?'
     )
 
-    auto_pay_from_balance = models.BooleanField(
-        default=True,
-        help_text='Automatically deduct weekly fees from account balance if sufficient funds available'
+    # Payment preference and auto-pay
+    payment_preference = models.CharField(
+        max_length=20,
+        choices=[
+            ('weekly', 'Pay Week-to-Week'),
+            ('season', 'Full Season Prepay'),
+            ('custom', 'Custom Amount'),
+        ],
+        default='weekly',
+        help_text='How user prefers to pay for weekly picks'
     )
 
+    auto_pay_enabled = models.BooleanField(
+        default=False,
+        help_text='Automatically deduct weekly fee from balance'
+    )
+
+    onboarding_completed = models.BooleanField(
+        default=False,
+        help_text='Has user completed payment preference onboarding'
+    )
+
+    prepay_weeks_remaining = models.IntegerField(
+        default=0,
+        help_text='Number of weeks covered by prepayment'
+    )
+
+    last_auto_payment_week = models.ForeignKey(
+        'Week',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='auto_paid_users',
+        help_text='Last week auto-payment was processed'
+    )
+
+    # Profile customization
     profile_picture = models.ImageField(
         upload_to='profile_pictures/',
         blank=True,
@@ -84,10 +121,11 @@ class UserProfile(models.Model):
     venmo_username = models.CharField(max_length=100, blank=True, null=True)
     paypal_email = models.EmailField(blank=True, null=True)
     stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
+
     preferred_payout_method = models.CharField(
         max_length=20,
         choices=PAYOUT_METHOD_CHOICES,
-        default='manual'
+        default='balance'  # Changed from 'manual' to 'balance'
     )
 
     # Lifetime statistics
@@ -97,12 +135,6 @@ class UserProfile(models.Model):
         default=Decimal('0.00'),
         help_text='Total amount won over all time'
     )
-    total_lifetime_paid = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal('0.00'),
-        help_text='Total amount paid in weekly fees'
-    )
 
     total_lifetime_paid = models.DecimalField(
         max_digits=10,
@@ -111,7 +143,7 @@ class UserProfile(models.Model):
         help_text='Total amount paid in weekly fees'
     )
 
-    # ADD THESE:
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

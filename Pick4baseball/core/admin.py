@@ -8,12 +8,14 @@ Sprint: Sprint 2, Days 6-8
 
 from django.contrib import admin
 from django.utils.html import format_html
+from core.models import UserProfile
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.db.models import Count, Sum, Q
 from .models import (
     UserProfile,
+    AccountTransaction,
     Team,
     TeamMember,
     TeamInvitation,
@@ -61,37 +63,66 @@ class CustomUserAdmin(UserAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = [
         'user',
-        'timezone',
-        'preferred_payout_method',
-        'total_lifetime_winnings',
-        'total_lifetime_paid',
-        'net_profit_display',
+        'account_balance_display',
+        'payment_preference',
+        'auto_pay_status',
+        'prepay_weeks_remaining',
+        'onboarding_status',
     ]
-    list_filter = ['timezone', 'preferred_payout_method']
-    search_fields = ['user__username', 'user__email', 'venmo_username', 'paypal_email']
-    readonly_fields = ['account_balance', 'stripe_customer_id', 'created_at', 'updated_at']
+
+    list_filter = [
+        'payment_preference',
+        'auto_pay_enabled',
+        'onboarding_completed',
+        'low_balance_alert_sent',
+    ]
+
+    search_fields = [
+        'user__username',
+        'user__email',
+        'user__first_name',
+        'user__last_name',
+    ]
+
+    readonly_fields = [
+        'last_auto_payment_week',
+        'last_low_balance_alert',
+    ]
 
     fieldsets = (
         ('User Info', {
-            'fields': ('user', 'timezone', 'phone_number')
+            'fields': ('user',)
         }),
-        ('Payment Info', {
+        ('Account Balance', {
+            'fields': (
+                'account_balance',
+                'low_balance_threshold',
+                'low_balance_alert_sent',
+                'last_low_balance_alert',
+            )
+        }),
+        ('Payment Preferences', {
+            'fields': (
+                'payment_preference',
+                'auto_pay_enabled',
+                'prepay_weeks_remaining',
+                'last_auto_payment_week',
+                'onboarding_completed',
+            ),
+            'description': 'How user pays for weekly picks'
+        }),
+        ('Payout Settings', {
             'fields': (
                 'preferred_payout_method',
-                'venmo_username',
                 'paypal_email',
-                'stripe_customer_id',
+                'venmo_username',
             )
         }),
-        ('Lifetime Stats', {
+        ('Other', {
             'fields': (
-                'total_lifetime_winnings',
-                'total_lifetime_paid',
+                'timezone',
+                'phone_number',
             )
-        }),
-        ('Timestamps', {
-            'fields': (),
-            'classes': ('collapse',)
         }),
     )
 
@@ -105,6 +136,140 @@ class UserProfileAdmin(admin.ModelAdmin):
         )
     net_profit_display.short_description = 'Net Profit'
 
+    def account_balance_display(self, obj):
+        """Display balance with color coding"""
+        balance = obj.account_balance
+        if balance < obj.low_balance_threshold:
+            color = 'red'
+        elif balance < 50:
+            color = 'orange'
+        else:
+            color = 'green'
+
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">${}</span>',
+            color,
+            balance
+        )
+    account_balance_display.short_description = 'Balance'
+    account_balance_display.admin_order_field = 'account_balance'
+
+    def auto_pay_status(self, obj):
+        """Display auto-pay status with icon"""
+        if obj.auto_pay_enabled:
+            return format_html(
+                '<span style="color: green;">✓ Enabled</span>'
+            )
+        else:
+            return format_html(
+                '<span style="color: gray;">✗ Disabled</span>'
+            )
+    auto_pay_status.short_description = 'Auto-Pay'
+    auto_pay_status.admin_order_field = 'auto_pay_enabled'
+
+    def onboarding_status(self, obj):
+        """Display onboarding status with icon"""
+        if obj.onboarding_completed:
+            return format_html(
+                '<span style="color: green;">✓ Complete</span>'
+            )
+        else:
+            return format_html(
+                '<span style="color: orange;">⏳ Pending</span>'
+            )
+    onboarding_status.short_description = 'Onboarding'
+    onboarding_status.admin_order_field = 'onboarding_completed'
+
+    actions = ['enable_auto_pay', 'disable_auto_pay', 'reset_onboarding']
+
+    def enable_auto_pay(self, request, queryset):
+        """Bulk action to enable auto-pay"""
+        updated = queryset.update(auto_pay_enabled=True)
+        self.message_user(
+            request,
+            f"Auto-pay enabled for {updated} user(s)."
+        )
+    enable_auto_pay.short_description = "Enable auto-pay for selected users"
+
+    def disable_auto_pay(self, request, queryset):
+        """Bulk action to disable auto-pay"""
+        updated = queryset.update(auto_pay_enabled=False)
+        self.message_user(
+            request,
+            f"Auto-pay disabled for {updated} user(s)."
+        )
+    disable_auto_pay.short_description = "Disable auto-pay for selected users"
+
+    def reset_onboarding(self, request, queryset):
+        """Bulk action to reset onboarding"""
+        updated = queryset.update(onboarding_completed=False)
+        self.message_user(
+            request,
+            f"Onboarding reset for {updated} user(s)."
+        )
+    reset_onboarding.short_description = "Reset onboarding for selected users"
+
+
+@admin.register(AccountTransaction)
+class AccountTransactionAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'user',
+        'transaction_type',
+        'amount_display',
+        'balance_after',
+        'status',
+        'created_at',
+    ]
+
+    list_filter = [
+        'transaction_type',
+        'status',
+        'created_at',
+    ]
+
+    search_fields = [
+        'user__username',
+        'user__email',
+        'description',
+    ]
+
+    readonly_fields = [
+        'user',
+        'transaction_type',
+        'amount',
+        'balance_before',
+        'balance_after',
+        'description',
+        'status',
+        'created_at',
+    ]
+
+    def amount_display(self, obj):
+        """Display amount with color based on type"""
+        if obj.transaction_type in ['deposit', 'winning']:
+            color = 'green'
+            prefix = '+'
+        else:
+            color = 'red'
+            prefix = '-'
+
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{} ${}</span>',
+            color,
+            prefix,
+            obj.amount
+        )
+    amount_display.short_description = 'Amount'
+    amount_display.admin_order_field = 'amount'
+
+    def has_add_permission(self, request):
+        """Prevent manual creation of transactions"""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of transactions"""
+        return False
 
 # ==============================================================================
 # TEAM MANAGEMENT

@@ -45,6 +45,7 @@ from .forms import (
     AccountInfoForm
 )
 from .services.balance_service import BalanceService
+from .services.balance_service import auto_deduct_weekly_fee
 
 import secrets
 import stripe
@@ -307,7 +308,7 @@ def account_settings(request):
                 form.save()
 
                 # Check if auto-pay setting changed
-                auto_pay = form.cleaned_data.get('auto_pay_from_balance')
+                auto_pay = form.cleaned_data.get('auto_pay_enabled')
                 if auto_pay:
                     messages.success(request, "✓ Auto-pay enabled. Weekly fees will be deducted automatically from your balance when you make picks.")
                 else:
@@ -523,6 +524,11 @@ def make_picks(request):
 
     user_team = team_membership.team
 
+    # Check if user completed onboarding
+    if not user.profile.onboarding_completed:
+        messages.info(request, "Please choose your payment preference first.")
+        return redirect('payment_preference_onboarding')
+
     # ==========================================
     # PAYMENT ENFORCEMENT - CRITICAL SECTION
     # ==========================================
@@ -537,7 +543,7 @@ def make_picks(request):
 
     if not existing_payment:
         # User hasn't paid yet - try auto-deduct if enabled
-        success, payment, message = BalanceService.auto_deduct_weekly_fee(user, user_team, current_week)
+        success, payment, message = auto_deduct_weekly_fee(user, user_team, current_week)
 
         if success:
             # Auto-deduct succeeded

@@ -3,9 +3,69 @@
 
 {% block title %}Make Picks - Baseball Pick 4{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Player Suggestions Autocomplete */
+.player-suggestions {
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    border: 2px solid #0d6efd;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.player-suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+
+.player-suggestion-item:hover,
+.player-suggestion-item.active {
+    background-color: #e9ecef;
+}
+
+.player-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.player-name {
+    font-weight: 600;
+    color: #212529;
+}
+
+.player-team {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-left: 8px;
+}
+
+.no-results {
+    padding: 15px;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.search-input-wrapper {
+    position: relative;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="container py-5">
+
+    <!-- Enhanced Payment Status Banner for make_picks.html -->
+    <!-- Replace lines 67-86 in your make_picks.html with this: -->
 
     <!-- Payment Status Banner -->
     <div class="alert alert-success mb-4">
@@ -24,9 +84,33 @@
                 <small class="text-muted">
                     Current Balance: <strong>${{ user.profile.account_balance|floatformat:2 }}</strong>
                 </small>
+                {% if user.profile.auto_pay_enabled %}
+                    <br><small class="text-success"><i class="fas fa-check-circle"></i> Auto-pay enabled</small>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- Low Balance Warning (NEW) -->
+    {% if user.profile.auto_pay_enabled and user.profile.account_balance < user.profile.low_balance_threshold %}
+    <div class="alert alert-warning mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Low Balance Alert</strong>
+                <p class="mb-0 mt-1 small">
+                    Your balance ({{ user.profile.account_balance|floatformat:2 }}) is running low.
+                    You have approximately {{ user.profile.prepay_weeks_remaining }} week(s) remaining.
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'custom_amount_payment' %}" class="btn btn-warning btn-sm">
+                    <i class="fas fa-plus-circle"></i> Add Funds
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Page Header -->
     <div class="row">
@@ -268,22 +352,45 @@ function updateCountdown() {
 updateCountdown();
 setInterval(updateCountdown, 1000);
 
-// Player Search/Filter Function
-function setupSearch(searchInputId, selectId, countId) {
+// Enhanced Player Search with Live Autocomplete
+function setupEnhancedSearch(searchInputId, selectId, countId) {
     const searchInput = document.getElementById(searchInputId);
     const select = document.getElementById(selectId);
     const countSpan = document.getElementById(countId);
     const options = Array.from(select.options);
 
+    // Create suggestions container
+    const suggestionsDiv = document.createElement('div');
+    suggestionsDiv.className = 'player-suggestions';
+    suggestionsDiv.id = searchInputId + '_suggestions';
+    searchInput.parentElement.appendChild(suggestionsDiv);
+
     searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
+        const searchTerm = this.value.toLowerCase().trim();
+
+        // Clear previous suggestions
+        suggestionsDiv.innerHTML = '';
+
+        if (!searchTerm) {
+            suggestionsDiv.style.display = 'none';
+            // Reset select options visibility
+            options.forEach(option => {
+                if (option.value !== '') {
+                    option.style.display = '';
+                }
+            });
+            countSpan.textContent = `${options.length - 1} available`;
+            countSpan.parentElement.className = 'text-muted';
+            return;
+        }
+
+        // Filter and collect matching players
+        const matches = [];
         let visibleCount = 0;
 
         options.forEach(option => {
             if (option.value === '') {
-                // Keep the placeholder option
-                option.style.display = '';
-                return;
+                return;  // Skip placeholder
             }
 
             const playerName = option.getAttribute('data-name') || '';
@@ -292,37 +399,134 @@ function setupSearch(searchInputId, selectId, countId) {
             if (playerName.includes(searchTerm) || teamName.includes(searchTerm)) {
                 option.style.display = '';
                 visibleCount++;
+                matches.push({
+                    value: option.value,
+                    name: option.textContent.split(' - ')[0],
+                    team: option.textContent.split(' - ')[1] || '',
+                    element: option
+                });
             } else {
                 option.style.display = 'none';
             }
         });
 
         // Update count
-        if (searchTerm) {
-            countSpan.textContent = `${visibleCount} found`;
-            countSpan.parentElement.className = 'text-success';
+        countSpan.textContent = `${visibleCount} found`;
+        countSpan.parentElement.className = visibleCount > 0 ? 'text-success' : 'text-danger';
+
+        // Show suggestions dropdown
+        if (matches.length > 0) {
+            // Limit to first 10 matches for performance
+            const topMatches = matches.slice(0, 10);
+
+            topMatches.forEach(match => {
+                const item = document.createElement('div');
+                item.className = 'player-suggestion-item';
+                item.innerHTML = `
+                    <span class="player-name">${match.name}</span>
+                    <span class="player-team">${match.team}</span>
+                `;
+
+                // Click handler
+                item.addEventListener('click', function() {
+                    select.value = match.value;
+                    select.dispatchEvent(new Event('change'));
+                    searchInput.value = '';
+                    suggestionsDiv.style.display = 'none';
+
+                    // Visual feedback
+                    select.classList.remove('is-invalid');
+                    select.classList.add('is-valid');
+                });
+
+                suggestionsDiv.appendChild(item);
+            });
+
+            if (matches.length > 10) {
+                const moreItem = document.createElement('div');
+                moreItem.className = 'no-results';
+                moreItem.textContent = `...and ${matches.length - 10} more. Keep typing to narrow down.`;
+                suggestionsDiv.appendChild(moreItem);
+            }
+
+            suggestionsDiv.style.display = 'block';
         } else {
-            countSpan.textContent = `${visibleCount} available`;
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.textContent = 'No players found';
+            suggestionsDiv.appendChild(noResults);
+            suggestionsDiv.style.display = 'block';
+        }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+            suggestionsDiv.style.display = 'none';
+        }
+    });
+
+    // Clear search and hide suggestions when selection is made
+    select.addEventListener('change', function() {
+        if (this.value) {
+            searchInput.value = '';
+            suggestionsDiv.style.display = 'none';
+            // Reset all options to visible
+            options.forEach(option => {
+                if (option.value !== '') {
+                    option.style.display = '';
+                }
+            });
+            countSpan.textContent = `${options.length - 1} available`;
             countSpan.parentElement.className = 'text-muted';
         }
     });
 
-    // Clear search when selection is made
-    select.addEventListener('change', function() {
-        if (this.value) {
-            searchInput.value = '';
-            searchInput.dispatchEvent(new Event('input'));
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', function(e) {
+        const items = suggestionsDiv.querySelectorAll('.player-suggestion-item');
+        if (items.length === 0) return;
+
+        let currentIndex = -1;
+        items.forEach((item, index) => {
+            if (item.classList.contains('active')) {
+                currentIndex = index;
+            }
+        });
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentIndex = Math.min(currentIndex + 1, items.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentIndex = Math.max(currentIndex - 1, 0);
+        } else if (e.key === 'Enter' && currentIndex >= 0) {
+            e.preventDefault();
+            items[currentIndex].click();
+            return;
+        } else {
+            return;
         }
+
+        // Update active class
+        items.forEach((item, index) => {
+            if (index === currentIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
     });
 }
 
 // Form validation
 document.addEventListener('DOMContentLoaded', function() {
-    // Set up search for all categories
-    setupSearch('search_2b', 'pick_2b', 'count_2b');
-    setupSearch('search_hr', 'pick_hr', 'count_hr');
-    setupSearch('search_swp', 'pick_swp', 'count_swp');
-    setupSearch('search_s', 'pick_s', 'count_s');
+    // Set up enhanced search for all categories
+    setupEnhancedSearch('search_2b', 'pick_2b', 'count_2b');
+    setupEnhancedSearch('search_hr', 'pick_hr', 'count_hr');
+    setupEnhancedSearch('search_swp', 'pick_swp', 'count_swp');
+    setupEnhancedSearch('search_s', 'pick_s', 'count_s');
 
     const form = document.querySelector('form');
     const selects = {

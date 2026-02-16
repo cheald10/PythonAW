@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Season Prepay - Baseball Pick 4{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 mb-3">⚾ Full Season Prepay</h1>
+                <p class="lead text-muted">Pay once, play all season with auto-pay</p>
+            </div>
+
+            <!-- Season Summary Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-muted mb-3">Season Details</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><strong>Team:</strong> {{ team.name }}</li>
+                                <li class="mb-2"><strong>Weeks Remaining:</strong> {{ weeks_remaining }}</li>
+                                <li class="mb-2"><strong>Weekly Fee:</strong> ${{ weekly_fee }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-muted mb-3">What You Get</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Auto-pay enabled</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> No weekly payments</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Lowest fees</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Set it & forget it</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="card border-primary shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Payment Summary</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-5">{{ weeks_remaining }} weeks × ${{ weekly_fee }}</span>
+                        <span class="fs-3 fw-bold text-primary">${{ season_cost }}</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-piggy-bank-fill"></i> 
+                        <strong>You're saving on fees!</strong> 
+                        <p class="mb-0 mt-2 small">
+                            By paying upfront, you avoid {{ weeks_remaining }} separate transaction fees. 
+                            This saves you money and makes your life easier.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-question-circle"></i> How Auto-Pay Works</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">You pay ${{ season_cost }} now</li>
+                        <li class="mb-2">Amount goes to your account balance</li>
+                        <li class="mb-2">Each week, ${{ weekly_fee }} is automatically deducted when you make picks</li>
+                        <li class="mb-2">No more manual payments - just play!</li>
+                    </ol>
+                    
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small>
+                            <i class="bi bi-bell"></i> 
+                            You'll get a notification when your balance is running low (< $30)
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Button -->
+            <form method="post" id="payment-form">
+                {% csrf_token %}
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg" id="checkout-button">
+                        <i class="bi bi-credit-card"></i> 
+                        Pay ${{ season_cost }} with Stripe
+                    </button>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-lock-fill"></i> Secure payment powered by Stripe
+                    </small>
+                </div>
+            </form>
+
+            <!-- Back Link -->
+            <div class="text-center mt-4">
+                <a href="{% url 'payment_preference_onboarding' %}" class="btn btn-link">
+                    <i class="bi bi-arrow-left"></i> Back to payment options
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('payment-form').addEventListener('submit', function(e) {
+    const button = document.getElementById('checkout-button');
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Choose Payment Preference - Baseball Pick 4{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">⚾ Welcome to {{ team.name }}!</h1>
+                <p class="lead text-muted">Choose how you'd like to pay for weekly picks</p>
+            </div>
+
+            <!-- Payment Options -->
+            <form method="post" id="payment-preference-form">
+                {% csrf_token %}
+                
+                <div class="row g-4">
+                    
+                    <!-- Option 1: Week-to-Week -->
+                    <div class="col-md-4">
+                        <div class="card h-100 payment-option" data-preference="weekly">
+                            <div class="card-body text-center d-flex flex-column">
+                                <div class="mb-3">
+                                    <i class="bi bi-calendar-week" style="font-size: 3rem; color: #6c757d;"></i>
+                                </div>
+                                <h4 class="card-title">Week-to-Week</h4>
+                                <p class="text-muted mb-3">Pay as you go</p>
+                                
+                                <div class="price mb-3">
+                                    <h2 class="text-primary">${{ weekly_fee }}</h2>
+                                    <small class="text-muted">per week</small>
+                                </div>
+                                
+                                <ul class="list-unstyled text-start mb-4 flex-grow-1">
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> Pay each week manually</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> No commitment</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> Skip weeks if needed</li>
+                                    <li class="mb-2"><i class="bi bi-x text-danger"></i> Higher total fees</li>
+                                </ul>
+                                
+                                <button type="button" class="btn btn-outline-primary select-option" data-preference="weekly">
+                                    Choose This
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option 2: Full Season (RECOMMENDED) -->
+                    <div class="col-md-4">
+                        <div class="card h-100 payment-option border-primary" data-preference="season" style="transform: scale(1.05);">
+                            <div class="card-header bg-primary text-white text-center">
+                                <strong>⭐ RECOMMENDED - Save {{ fee_savings|floatformat:2 }}!</strong>
+                            </div>
+                            <div class="card-body text-center d-flex flex-column">
+                                <div class="mb-3">
+                                    <i class="bi bi-piggy-bank" style="font-size: 3rem; color: #0d6efd;"></i>
+                                </div>
+                                <h4 class="card-title">Full Season Prepay</h4>
+                                <p class="text-muted mb-3">Best value - Set it & forget it</p>
+                                
+                                <div class="price mb-3">
+                                    <h2 class="text-primary">${{ season_cost }}</h2>
+                                    <small class="text-muted">{{ weeks_remaining }} weeks @ ${{ weekly_fee }}/week</small>
+                                </div>
+                                
+                                <ul class="list-unstyled text-start mb-4 flex-grow-1">
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Pay once for full season</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Auto-deduct weekly</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Lowest fees</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Never miss a week</li>
+                                </ul>
+                                
+                                <button type="button" class="btn btn-primary select-option" data-preference="season">
+                                    Choose This
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option 3: Custom Amount -->
+                    <div class="col-md-4">
+                        <div class="card h-100 payment-option" data-preference="custom">
+                            <div class="card-body text-center d-flex flex-column">
+                                <div class="mb-3">
+                                    <i class="bi bi-wallet2" style="font-size: 3rem; color: #198754;"></i>
+                                </div>
+                                <h4 class="card-title">Custom Amount</h4>
+                                <p class="text-muted mb-3">Your choice, your way</p>
+                                
+                                <div class="price mb-3">
+                                    <h2 class="text-success">$50+</h2>
+                                    <small class="text-muted">You decide</small>
+                                </div>
+                                
+                                <ul class="list-unstyled text-start mb-4 flex-grow-1">
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> Deposit any amount</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> Auto-deduct weekly</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> Add more anytime</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success"></i> Flexibility + convenience</li>
+                                </ul>
+                                
+                                <button type="button" class="btn btn-outline-success select-option" data-preference="custom">
+                                    Choose This
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+
+                <!-- Hidden input for selected preference -->
+                <input type="hidden" name="payment_preference" id="payment_preference" value="">
+                
+            </form>
+
+            <!-- Info Section -->
+            <div class="row mt-5">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-info-circle"></i> How Auto-Pay Works</h5>
+                        <p class="mb-2">When you prepay (Option 2 or 3), your weekly fee is automatically deducted from your account balance each week when you make picks. No more manual payments!</p>
+                        <ul class="mb-0">
+                            <li>Your balance is always visible in your account</li>
+                            <li>Get alerts when balance is running low</li>
+                            <li>Add more funds anytime</li>
+                            <li>Change payment preference in settings</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+}
+
+.payment-option.selected {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 8px 16px rgba(13,110,253,0.2);
+}
+
+.price h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const options = document.querySelectorAll('.select-option');
+    const preferenceInput = document.getElementById('payment_preference');
+    const form = document.getElementById('payment-preference-form');
+    
+    options.forEach(button => {
+        button.addEventListener('click', function() {
+            const preference = this.dataset.preference;
+            
+            // Remove selected class from all
+            document.querySelectorAll('.payment-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            this.closest('.payment-option').classList.add('selected');
+            
+            // Set hidden input value
+            preferenceInput.value = preference;
+            
+            // Submit form
+            form.submit();
+        });
+    });
+});
+</script>
+
+{% endblock %}

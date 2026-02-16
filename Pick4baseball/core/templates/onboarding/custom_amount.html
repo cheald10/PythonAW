@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Custom Amount Deposit - Baseball Pick 4{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 mb-3">💰 Add Funds to Your Account</h1>
+                <p class="lead text-muted">Choose an amount and enable auto-pay</p>
+            </div>
+
+            <!-- Quick Amount Buttons -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Popular Amounts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for option in suggested_amounts %}
+                        <div class="col-6 col-md-3">
+                            <button type="button" 
+                                    class="btn btn-outline-primary w-100 quick-amount" 
+                                    data-amount="{{ option.amount }}">
+                                <div class="fw-bold">${{ option.amount }}</div>
+                                <small class="text-muted">~{{ option.weeks }} weeks</small>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small>
+                            <i class="bi bi-info-circle"></i> 
+                            Based on ${{ weekly_fee }}/week. Choose the amount that works for you!
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Amount Form -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Or Enter Custom Amount</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="payment-form">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="custom-amount" class="form-label">Amount (USD)</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="custom-amount" 
+                                       name="amount" 
+                                       min="10" 
+                                       max="1000" 
+                                       step="1" 
+                                       placeholder="Enter amount"
+                                       required>
+                            </div>
+                            <div class="form-text">
+                                Minimum: $10 | Maximum: $1,000
+                            </div>
+                            <div id="weeks-estimate" class="mt-2 text-muted"></div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="checkout-button">
+                                <i class="bi bi-credit-card"></i> 
+                                Add Funds with Stripe
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-lock-fill"></i> Secure payment powered by Stripe
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-question-circle"></i> How Auto-Pay Works</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">Add funds to your account balance</li>
+                        <li class="mb-2">Auto-pay is automatically enabled</li>
+                        <li class="mb-2">Each week, ${{ weekly_fee }} is deducted when you make picks</li>
+                        <li class="mb-2">Get alerts when balance is low (< $30)</li>
+                        <li class="mb-2">Add more funds anytime</li>
+                    </ol>
+                    
+                    <div class="alert alert-success mt-3 mb-0">
+                        <i class="bi bi-piggy-bank-fill"></i> 
+                        <strong>Flexible and convenient!</strong> 
+                        Start with any amount and add more whenever you need.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Link -->
+            <div class="text-center mt-4">
+                <a href="{% url 'payment_preference_onboarding' %}" class="btn btn-link">
+                    <i class="bi bi-arrow-left"></i> Back to payment options
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const customAmountInput = document.getElementById('custom-amount');
+    const weeksEstimate = document.getElementById('weeks-estimate');
+    const quickAmountButtons = document.querySelectorAll('.quick-amount');
+    const weeklyFee = {{ weekly_fee }};
+    
+    // Quick amount buttons
+    quickAmountButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const amount = this.dataset.amount;
+            customAmountInput.value = amount;
+            updateWeeksEstimate(amount);
+            
+            // Visual feedback
+            quickAmountButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    // Update weeks estimate on input
+    customAmountInput.addEventListener('input', function() {
+        updateWeeksEstimate(this.value);
+        // Remove active state from quick buttons
+        quickAmountButtons.forEach(btn => btn.classList.remove('active'));
+    });
+    
+    function updateWeeksEstimate(amount) {
+        if (amount && amount >= 10) {
+            const weeks = Math.floor(amount / weeklyFee);
+            weeksEstimate.innerHTML = `<i class="bi bi-calendar-week"></i> This covers approximately <strong>${weeks} weeks</strong>`;
+        } else {
+            weeksEstimate.innerHTML = '';
+        }
+    }
+    
+    // Form submission
+    document.getElementById('payment-form').addEventListener('submit', function(e) {
+        const button = document.getElementById('checkout-button');
+        const amount = customAmountInput.value;
+        
+        if (!amount || amount < 10) {
+            e.preventDefault();
+            alert('Please enter an amount of at least $10');
+            return;
+        }
+        
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    });
+});
+</script>
+
+<style>
+.quick-amount {
+    transition: all 0.2s ease;
+}
+
+.quick-amount:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.quick-amount.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+</style>
+
+{% endblock %}

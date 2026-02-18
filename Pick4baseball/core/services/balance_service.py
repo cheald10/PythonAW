@@ -175,7 +175,6 @@ def auto_deduct_weekly_fee(user, week, team):
         existing_payment = WeeklyPayment.objects.filter(
             user=user,
             week=week,
-            team=team,
             status='completed'
         ).first()
 
@@ -224,15 +223,13 @@ def auto_deduct_weekly_fee(user, week, team):
                 balance_after=profile.account_balance,
                 description=f'Week {week.week_number} auto-payment - {team.name}',
                 status='completed',
-                week=week,
-                team=team
+                week=week
             )
 
             # Create weekly payment record
             payment = WeeklyPayment.objects.create(
                 user=user,
                 week=week,
-                team=team,
                 amount=weekly_fee,
                 payment_method='balance',
                 status='completed',
@@ -298,7 +295,6 @@ def complete_season_prepay(user, amount_paid, weeks_covered, team):
                 balance_after=profile.account_balance,
                 description=f'Season prepay - {weeks_covered} weeks - {team.name}',
                 status='completed',
-                team=team
             )
 
             logger.info(
@@ -355,7 +351,6 @@ def complete_custom_prepay(user, amount_paid, team):
                 balance_after=profile.account_balance,
                 description=f'Custom prepay - ${amount_paid} - {team.name}',
                 status='completed',
-                team=team
             )
 
             logger.info(

@@ -5,6 +5,51 @@
 
 {% block content %}
 <div class="container mt-4">
+
+    {% if user.profile.payment_preference == 'weekly' and not banner_dismissed %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="alert-heading">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Switch to Prepay & Save Money!
+                </h5>
+                <p class="mb-2">
+                    You're currently paying week-to-week. Upgrade to season prepay and:
+                </p>
+                <ul class="mb-0">
+                    <li>Save ~$15 in Stripe fees</li>
+                    <li>Never worry about forgetting to pay</li>
+                    <li>Auto-pay handles everything</li>
+                </ul>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'season_prepay_payment' %}" class="btn btn-success mb-2 w-100">
+                    <i class="fas fa-calendar-check me-2"></i>Upgrade Now
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100"
+                        onclick="dismissBanner()">
+                    Maybe Later
+                </button>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <script>
+    function dismissBanner() {
+        // Store in localStorage so it doesn't show again this session
+        localStorage.setItem('prepay_banner_dismissed', 'true');
+        document.querySelector('.alert-warning').remove();
+    }
+
+    // Check if banner was dismissed
+    if (localStorage.getItem('prepay_banner_dismissed') === 'true') {
+        document.querySelector('.alert-warning')?.remove();
+    }
+    </script>
+    {% endif %}
+
     <div class="row">
         <div class="col-12">
             <h1>Welcome, {{ user.first_name|default:user.username }}!</h1>
@@ -117,7 +162,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Captain Tools (if user is captain) -->
             {% for membership in user_teams %}
                 {% if membership.role == 'captain' %}
@@ -132,20 +177,20 @@
                         <p class="small text-muted mb-2">
                             Share your team join code with friends
                         </p>
-                        
+
                         <div class="input-group mb-2">
-                            <input type="text" 
-                                   class="form-control text-center fw-bold" 
-                                   id="joinCode{{ forloop.counter }}" 
-                                   value="{{ membership.team.join_code }}" 
+                            <input type="text"
+                                   class="form-control text-center fw-bold"
+                                   id="joinCode{{ forloop.counter }}"
+                                   value="{{ membership.team.join_code }}"
                                    readonly>
-                            <button class="btn btn-warning" 
+                            <button class="btn btn-warning"
                                     type="button"
                                     onclick="copyJoinCode('{{ forloop.counter }}', '{{ membership.team.join_code }}')">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>
-                        
+
                         <div id="copySuccess{{ forloop.counter }}" class="alert alert-success py-1 d-none" role="alert">
                             <small><i class="fas fa-check-circle me-1"></i> Code copied!</small>
                         </div>
@@ -153,7 +198,7 @@
                 </div>
                 {% endif %}
             {% endfor %}
-            
+
             {% else %}
             <div class="card border-warning">
                 <div class="card-header bg-warning">
@@ -281,19 +326,19 @@
         var input = document.getElementById('joinCode' + counter);
         input.select();
         input.setSelectionRange(0, 99999);
-        
+
         navigator.clipboard.writeText(code).then(function() {
             // Show success message
             var msg = document.getElementById('copySuccess' + counter);
             msg.classList.remove('d-none');
-            
+
             // Change button to success state
             var btn = event.target.closest('button');
             var originalHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i>';
             btn.classList.remove('btn-warning');
             btn.classList.add('btn-success');
-            
+
             // Reset after 2 seconds
             setTimeout(function() {
                 msg.classList.add('d-none');

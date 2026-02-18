@@ -377,6 +377,18 @@ def account_settings(request):
 
     net_profit = total_winnings - total_paid
 
+    # Calculate weeks remaining in season
+    current_week = Week.objects.filter(is_active=True, season_year=2026).first()
+    if current_week:
+        weeks_remaining = 26 - current_week.week_number + 1
+    else:
+        weeks_remaining = 26
+
+    context = {
+        # ... existing context ...
+        'weeks_remaining': weeks_remaining,
+    }
+
     context = {
         'profile': profile,
         'picture_form': picture_form,
@@ -388,6 +400,38 @@ def account_settings(request):
     }
 
     return render(request, 'account_settings.html', context)
+
+@login_required
+@csrf_exempt
+def toggle_auto_pay(request):
+    """
+    Allow users to enable/disable auto-pay
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+    try:
+        data = json.loads(request.body)
+        enabled = data.get('enabled', False)
+
+        profile = request.user.profile
+        profile.auto_pay_enabled = enabled
+        profile.save()
+
+        logger.info(f"Auto-pay {'enabled' if enabled else 'disabled'} for {request.user.username}")
+
+        return JsonResponse({
+            'success': True,
+            'enabled': enabled,
+            'message': f"Auto-pay {'enabled' if enabled else 'disabled'} successfully"
+        })
+
+    except Exception as e:
+        logger.error(f"Toggle auto-pay error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred'
+        })
 
 @login_required
 def team_detail(request, team_id):
@@ -1043,7 +1087,7 @@ def payment_portal(request):
         'total_outstanding': total_outstanding,
         'current_week': current_week,
         'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY,
-        'paypal_client_id': settings.PAYPAL_CLIENT_ID,
+        'PAYPAL_CLIENT_ID': settings.PAYPAL_CLIENT_ID,
     }
 
     return render(request, 'payments/payment_portal.html', context)

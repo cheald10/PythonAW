@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #28a745; color: white; padding: 20px; text-align: center; }
+        .content { background: #f8f9fa; padding: 30px; }
+        .success-box { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Welcome to Auto-Pay!</h1>
+        </div>
+        <div class="content">
+            <p>Hi {{ user.first_name|default:user.username }},</p>
+            
+            <div class="success-box">
+                <p><strong>You've successfully upgraded to {{ preference_name }}!</strong></p>
+                <ul>
+                    <li>Balance Added: ${{ amount }}</li>
+                    <li>Weeks Covered: {{ weeks }}</li>
+                    <li>Auto-Pay: Enabled ✓</li>
+                </ul>
+            </div>
+            
+            <h3>What This Means:</h3>
+            <ul>
+                <li>✅ Weekly fees automatically deducted from your balance</li>
+                <li>✅ No more manual payments needed</li>
+                <li>✅ You'll never miss a week</li>
+                <li>✅ We'll notify you when balance gets low</li>
+            </ul>
+            
+            <p>You can view your balance and payment status anytime in your 
+               <a href="{{ settings_url }}">Account Settings</a>.</p>
+            
+            <p>Thanks for being part of Baseball Pick 4!</p>
+        </div>
+    </div>
+</body>
+</html>

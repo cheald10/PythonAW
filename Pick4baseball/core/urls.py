@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 from . import views, views_leaderboard
 from . import prepay_views
 from . import verification_views
+from core import paypal_views
 
 urlpatterns = [
     # Home
@@ -90,7 +91,20 @@ urlpatterns = [
          prepay_views.custom_prepay_success,
          name='custom_prepay_success'),
 
-     # Admin functions
+    # PayPal Inline Checkout API
+    path('api/paypal/create-order/',
+         paypal_views.create_paypal_order,
+         name='paypal_create_order'),
+
+    path('api/paypal/capture-order/',
+         paypal_views.capture_paypal_order,
+         name='paypal_capture_order'),
+
+    path('account/toggle-auto-pay/',
+         views.toggle_auto_pay,
+         name='toggle_auto_pay'),
+
+    # Admin functions
     path('admin/week/<int:week_id>/complete/', views.admin_complete_week, name='admin_complete_week'),
 ]
 

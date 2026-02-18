@@ -5,9 +5,19 @@
 
 {% block content %}
 <div class="container mt-5">
+
+    {% if is_upgrade %}
+    <div class="alert alert-success mb-4">
+        <h5><i class="fas fa-arrow-up me-2"></i>Upgrading to Season Prepay!</h5>
+        <p class="mb-0">
+            Great choice! You'll switch from week-to-week payments to auto-pay for the rest of the season.
+        </p>
+    </div>
+    {% endif %}
+
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            
+
             <!-- Header -->
             <div class="text-center mb-5">
                 <h1 class="display-5 mb-3">⚾ Full Season Prepay</h1>
@@ -49,14 +59,14 @@
                         <span class="fs-5">{{ weeks_remaining }} weeks × ${{ weekly_fee }}</span>
                         <span class="fs-3 fw-bold text-primary">${{ season_cost }}</span>
                     </div>
-                    
+
                     <hr>
-                    
+
                     <div class="alert alert-success mb-0">
-                        <i class="bi bi-piggy-bank-fill"></i> 
-                        <strong>You're saving on fees!</strong> 
+                        <i class="bi bi-piggy-bank-fill"></i>
+                        <strong>You're saving on fees!</strong>
                         <p class="mb-0 mt-2 small">
-                            By paying upfront, you avoid {{ weeks_remaining }} separate transaction fees. 
+                            By paying upfront, you avoid {{ weeks_remaining }} separate transaction fees.
                             This saves you money and makes your life easier.
                         </p>
                     </div>
@@ -75,10 +85,10 @@
                         <li class="mb-2">Each week, ${{ weekly_fee }} is automatically deducted when you make picks</li>
                         <li class="mb-2">No more manual payments - just play!</li>
                     </ol>
-                    
+
                     <div class="alert alert-info mt-3 mb-0">
                         <small>
-                            <i class="bi bi-bell"></i> 
+                            <i class="bi bi-bell"></i>
                             You'll get a notification when your balance is running low (< $30)
                         </small>
                     </div>
@@ -88,14 +98,14 @@
             <!-- Payment Button -->
             <form method="post" id="payment-form">
                 {% csrf_token %}
-                
+
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary btn-lg" id="checkout-button">
-                        <i class="bi bi-credit-card"></i> 
+                        <i class="bi bi-credit-card"></i>
                         Pay ${{ season_cost }} with Stripe
                     </button>
                 </div>
-                
+
                 <div class="text-center mt-3">
                     <small class="text-muted">
                         <i class="bi bi-lock-fill"></i> Secure payment powered by Stripe

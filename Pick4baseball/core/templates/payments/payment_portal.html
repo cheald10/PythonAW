@@ -6,20 +6,6 @@
 {% block content %}
 
 <div class="container py-3">
-    <!-- Messages -->
-    <!--{# TEMPORARILY COMMENTED OUT
-    {% if messages %}
-        <div class="container py-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    #}-->
-
     <!-- Quick Tip -->
     <div class="alert alert-info">
         <h5><i class="fas fa-info-circle me-2"></i>Quick Tip</h5>
@@ -181,6 +167,22 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    <!-- PayPal Notice Banner -->
+                    <div class="alert alert-info mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fab fa-paypal fa-2x text-primary me-3 mt-1"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">Paying with PayPal?</h6>
+                                <p class="mb-0 small">
+                                    You'll be securely redirected to PayPal to complete your payment.
+                                    You may see a blank screen - this is a privacy notice from PayPal and required for all transactions.
+                                    Visit PayPal for a complete understanding of their privacy requirements.
+                                    Close the screen and the payment window will be displayed on the previous tab for mobile devices or on the screen for PC/Mac.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Amount to Add</label>
                         <select id="paypal-amount" class="form-select form-select-lg">
@@ -191,7 +193,7 @@
                         </select>
                     </div>
 
-                    <!-- PayPal button container -->
+                    <!-- PayPal Button Container -->
                     <div id="paypal-button-container"></div>
 
                     <button class="btn btn-secondary mt-3" onclick="hidePayPalPayment()">
@@ -384,6 +386,9 @@
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3/"></script>
 
+<!-- PayPal SDK (ONLY LOADED ONCE) -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=USD"></script>
+
 <script>
 // Initialize Stripe
 const stripe = Stripe('{{ stripe_public_key }}');
@@ -391,9 +396,9 @@ let elements;
 let paymentElement;
 let currentTeamId;
 let currentWeekId;
-let paymentInProgress = false;  // Prevent double-clicks
+let paymentInProgress = false;
 
-// CSRF Token Helper
+// Helper function to get CSRF token
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -409,7 +414,203 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Pay with Balance Function
+// ============================================
+// PAYMENT METHOD SELECTION
+// ============================================
+
+function showStripePayment() {
+    document.getElementById('stripe-section').style.display = 'block';
+    document.getElementById('paypal-section').style.display = 'none';
+    document.getElementById('stripe-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideStripePayment() {
+    document.getElementById('stripe-section').style.display = 'none';
+}
+
+function showPayPalPayment() {
+    document.getElementById('paypal-section').style.display = 'block';
+    document.getElementById('stripe-section').style.display = 'none';
+
+    // Render PayPal buttons if not already rendered
+    if (!window.paypalButtonsRendered) {
+        renderPayPalButtons();
+        window.paypalButtonsRendered = true;
+    }
+
+    document.getElementById('paypal-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hidePayPalPayment() {
+    document.getElementById('paypal-section').style.display = 'none';
+}
+
+// ============================================
+// STRIPE CUSTOM AMOUNT HANDLING
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const stripeAmountSelect = document.getElementById('stripe-amount');
+    if (stripeAmountSelect) {
+        stripeAmountSelect.addEventListener('change', function() {
+            const customDiv = document.getElementById('stripe-custom-amount');
+            if (this.value === 'custom') {
+                customDiv.style.display = 'block';
+            } else {
+                customDiv.style.display = 'none';
+            }
+        });
+    }
+
+    // Re-render PayPal buttons when amount changes
+    const paypalAmountSelect = document.getElementById('paypal-amount');
+    if (paypalAmountSelect) {
+        paypalAmountSelect.addEventListener('change', function() {
+            if (window.paypalButtonsRendered) {
+                renderPayPalButtons();
+            }
+        });
+    }
+});
+
+function processStripeDeposit() {
+    let amount = document.getElementById('stripe-amount').value;
+
+    if (amount === 'custom') {
+        amount = document.getElementById('stripe-custom-input').value;
+        if (!amount || parseFloat(amount) < 5) {
+            alert('Please enter an amount of at least $5.00');
+            return;
+        }
+    }
+
+    // TODO: Implement Stripe deposit flow
+    alert('Stripe deposit integration - Amount: $' + amount);
+}
+
+// ============================================
+// PAYPAL INTEGRATION
+// ============================================
+
+function renderPayPalButtons() {
+    // Clear any existing buttons
+    document.getElementById('paypal-button-container').innerHTML = '';
+
+    // Get selected amount
+    var amount = document.getElementById('paypal-amount').value;
+
+    // Render PayPal button
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'blue',
+            layout: 'vertical',
+            label: 'pay'
+        },
+
+        // SERVER-SIDE: Create order on your Django backend
+        createOrder: function(data, actions) {
+            return fetch('/api/paypal/create-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    description: 'Pick 4 Baseball - Account Balance Deposit'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error creating order: ' + data.error);
+                    throw new Error(data.error);
+                }
+                return data.orderID;  // Return order ID from YOUR server
+            })
+            .catch(error => {
+                console.error('Create order error:', error);
+                alert('Payment initialization failed. Please try again.');
+                throw error;
+            });
+        },
+
+        // SERVER-SIDE: Capture order on your Django backend
+        onApprove: function(data, actions) {
+            // Show processing message
+            var container = document.getElementById('paypal-button-container');
+            container.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>';
+
+            return fetch('/api/paypal/capture-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    orderID: data.orderID,
+                    payment_type: 'deposit'  // For account balance deposit
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    container.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Payment successful!</strong><br>
+                            $${amount} has been added to your account.<br>
+                            Redirecting...
+                        </div>
+                    `;
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong> ${result.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Capture error:', error);
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        An error occurred. Please contact support.
+                    </div>
+                `;
+            });
+        },
+
+        onError: function(err) {
+            console.error('PayPal error:', err);
+            document.getElementById('paypal-button-container').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    An error occurred with PayPal. Please try again.
+                </div>
+            `;
+        },
+
+        onCancel: function(data) {
+            console.log('Payment cancelled by user');
+            document.getElementById('paypal-button-container').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Payment cancelled. You can try again when ready.
+                </div>
+            `;
+        }
+    }).render('#paypal-button-container');
+}
+
+// ============================================
+// PAY WITH BALANCE
+// ============================================
+
 async function payWithBalance(teamId, weekId) {
     if (!confirm('Pay with your account balance?')) return;
 
@@ -440,9 +641,11 @@ async function payWithBalance(teamId, weekId) {
     }
 }
 
-// Pay with Card Function - WITH DUPLICATE PREVENTION
+// ============================================
+// PAY WITH CARD (STRIPE)
+// ============================================
+
 async function payWithCard(teamId, weekId, amount, teamName) {
-    // Prevent multiple simultaneous payment attempts
     if (paymentInProgress) {
         alert('Payment is already being processed. Please wait.');
         return;
@@ -453,405 +656,128 @@ async function payWithCard(teamId, weekId, amount, teamName) {
     currentWeekId = weekId;
 
     try {
-        // Update modal info
         document.getElementById('modal-team-name').textContent = teamName;
         document.getElementById('modal-amount').textContent = parseFloat(amount).toFixed(2);
 
-        // Show modal
         const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
         modal.show();
 
-        // Show loading state
         document.getElementById('payment-loading').style.display = 'block';
         document.getElementById('payment-form').style.display = 'none';
 
         // Create payment intent
-        const response = await fetch(`/api/payments/create-intent/${teamId}/`, {
+        const response = await fetch('/payments/create-payment-intent/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'),
-            }
+            },
+            body: JSON.stringify({
+                team_id: teamId,
+                week_id: weekId,
+                amount: amount
+            })
         });
 
         const data = await response.json();
 
-        if (!response.ok) {
-            // Handle specific error cases
-            if (response.status === 400 && data.error.includes('already paid')) {
-                // User already paid - show message and reload
-                showError(data.error);
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-                return;
-            }
-
-            throw new Error(data.error || 'Failed to initialize payment');
+        if (data.error) {
+            throw new Error(data.error);
         }
 
-        // Initialize Stripe Elements with the client secret
-        const appearance = {
-            theme: 'stripe',
-            variables: {
-                colorPrimary: '#0d6efd',
-            }
-        };
-
-        elements = stripe.elements({
-            clientSecret: data.clientSecret,
-            appearance: appearance
-        });
-
-        // Create and mount the Payment Element
+        elements = stripe.elements({ clientSecret: data.client_secret });
         paymentElement = elements.create('payment');
         paymentElement.mount('#payment-element');
 
-        // Hide loading, show form
         document.getElementById('payment-loading').style.display = 'none';
         document.getElementById('payment-form').style.display = 'block';
 
     } catch (error) {
-        console.error('Error initializing payment:', error);
-        showError(error.message || 'Failed to initialize payment form');
-        document.getElementById('payment-loading').style.display = 'none';
-
-        // Close modal on error
-        setTimeout(() => {
-            const modalElement = document.getElementById('paymentModal');
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) modal.hide();
-        }, 3000);
-    } finally {
-        // Always reset the flag when done (success or error)
+        console.error('Error:', error);
+        alert('Error initializing payment: ' + error.message);
         paymentInProgress = false;
+        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
     }
 }
 
-// Handle form submission
-document.getElementById('payment-form').addEventListener('submit', async (e) => {
+// Handle payment form submission
+document.getElementById('payment-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    setLoading(true);
-    hideError();
-
-    try {
-        // Confirm the payment with Stripe
-        const {error} = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: window.location.origin + '/payments/',
-            },
-        });
-
-        if (error) {
-            // Payment failed - show error
-            showError(error.message);
-            setLoading(false);
-        } else {
-            // Payment succeeded - Stripe will redirect to return_url
-            // The webhook will handle updating the database
-        }
-    } catch (error) {
-        console.error('Payment error:', error);
-        showError('An unexpected error occurred');
-        setLoading(false);
-    }
-});
-
-// UI Helper Functions
-function setLoading(isLoading) {
     const submitButton = document.getElementById('submit-payment');
     const buttonText = document.getElementById('button-text');
     const buttonSpinner = document.getElementById('button-spinner');
 
-    if (isLoading) {
-        submitButton.disabled = true;
-        buttonText.style.display = 'none';
-        buttonSpinner.style.display = 'inline-block';
-    } else {
+    submitButton.disabled = true;
+    buttonText.style.display = 'none';
+    buttonSpinner.style.display = 'inline-block';
+
+    const {error} = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+            return_url: window.location.origin + '/payments/success/',
+        },
+    });
+
+    if (error) {
+        document.getElementById('payment-errors').textContent = error.message;
+        document.getElementById('payment-errors').style.display = 'block';
         submitButton.disabled = false;
         buttonText.style.display = 'inline';
         buttonSpinner.style.display = 'none';
-    }
-}
-
-function showError(message) {
-    const errorDiv = document.getElementById('payment-errors');
-    errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
-}
-
-function hideError() {
-    const errorDiv = document.getElementById('payment-errors');
-    errorDiv.style.display = 'none';
-}
-
-function showSuccess(message) {
-    const successDiv = document.getElementById('withdrawalMessage');
-    if (successDiv) {
-        successDiv.className = 'alert alert-success';
-        successDiv.textContent = message;
-        successDiv.classList.remove('d-none');
-        setTimeout(() => successDiv.classList.add('d-none'), 5000);
-    }
-}
-
-// Withdrawal Function
-function submitWithdrawal() {
-    const amount = document.getElementById('withdrawAmount').value;
-    const method = document.getElementById('withdrawMethod').value;
-
-    if (!amount || parseFloat(amount) <= 0) {
-        showError('Please enter a valid withdrawal amount');
-        return;
-    }
-
-    if (!method) {
-        showError('Please select a withdrawal method');
-        return;
-    }
-
-    // Confirm withdrawal
-    if (!confirm(`Withdraw $${amount} via ${method}?`)) {
-        return;
-    }
-
-    // Show loading state
-    const withdrawBtn = document.querySelector('button[onclick="submitWithdrawal()"]');
-    const originalText = withdrawBtn.textContent;
-    withdrawBtn.disabled = true;
-    withdrawBtn.textContent = 'Processing...';
-
-    // Submit withdrawal request
-    fetch("{% url 'request_withdrawal' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            amount: amount,
-            method: method,
-            notes: ''
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showSuccess('Withdrawal processed! Check your email for confirmation.');
-            // Update balance display if it exists
-            const balanceElement = document.querySelector('.account-balance');
-            if (balanceElement) {
-                balanceElement.textContent = `$${data.new_balance}`;
-            }
-            // Clear form
-            document.getElementById('withdrawAmount').value = '';
-            // Reload page after 2 seconds to show updated balance
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            showError(data.error || 'Withdrawal failed');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showError('An error occurred processing your withdrawal');
-    })
-    .finally(() => {
-        withdrawBtn.disabled = false;
-        withdrawBtn.textContent = originalText;
-    });
-}
-
-// Helper function to get CSRF token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-</script>
-
-<!-- PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
-
-<script>
-// ============================================
-// PAYMENT METHOD SELECTION
-// ============================================
-
-function showStripePayment() {
-    document.getElementById('stripe-section').style.display = 'block';
-    document.getElementById('paypal-section').style.display = 'none';
-
-    // Scroll to section
-    document.getElementById('stripe-section').scrollIntoView({ behavior: 'smooth' });
-}
-
-function hideStripePayment() {
-    document.getElementById('stripe-section').style.display = 'none';
-}
-
-function showPayPalPayment() {
-    document.getElementById('paypal-section').style.display = 'block';
-    document.getElementById('stripe-section').style.display = 'none';
-
-    // Render PayPal buttons
-    renderPayPalButtons();
-
-    // Scroll to section
-    document.getElementById('paypal-section').scrollIntoView({ behavior: 'smooth' });
-}
-
-function hidePayPalPayment() {
-    document.getElementById('paypal-section').style.display = 'none';
-    // Clear PayPal buttons
-    document.getElementById('paypal-button-container').innerHTML = '';
-}
-
-// ============================================
-// STRIPE CUSTOM AMOUNT HANDLING
-// ============================================
-
-document.getElementById('stripe-amount').addEventListener('change', function() {
-    const customDiv = document.getElementById('stripe-custom-amount');
-    if (this.value === 'custom') {
-        customDiv.style.display = 'block';
-    } else {
-        customDiv.style.display = 'none';
+        paymentInProgress = false;
     }
 });
 
-function processStripeDeposit() {
-    let amount = document.getElementById('stripe-amount').value;
+// ============================================
+// WITHDRAWAL
+// ============================================
 
-    if (amount === 'custom') {
-        amount = document.getElementById('stripe-custom-input').value;
-        if (!amount || parseFloat(amount) < 5) {
-            alert('Please enter an amount of at least $5.00');
-            return;
-        }
+async function submitWithdrawal() {
+    const amount = document.getElementById('withdrawAmount').value;
+    const method = document.getElementById('withdrawMethod').value;
+    const notes = document.getElementById('withdrawNotes').value;
+
+    if (!amount || !method) {
+        alert('Please fill in all required fields');
+        return;
     }
 
-    // TODO: Open Stripe payment modal for deposit
-    // This would create a PaymentIntent for the deposit amount
-    alert('Stripe deposit integration - Amount: $' + amount);
-    // For now, you can reuse the existing payWithCard flow but modify it for deposits
-}
+    try {
+        const response = await fetch('/payments/request-withdrawal/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                amount: amount,
+                method: method,
+                notes: notes
+            })
+        });
 
-// ============================================
-// PAYPAL INTEGRATION
-// ============================================
+        const data = await response.json();
+        const messageDiv = document.getElementById('withdrawalMessage');
 
-function renderPayPalButtons() {
-    // Clear any existing buttons
-    document.getElementById('paypal-button-container').innerHTML = '';
+        if (data.success) {
+            messageDiv.className = 'alert alert-success';
+            messageDiv.textContent = 'Withdrawal request submitted successfully!';
+            messageDiv.classList.remove('d-none');
 
-    // Get selected amount
-    var amount = document.getElementById('paypal-amount').value;
-
-    // Render PayPal button
-    paypal.Buttons({
-        style: {
-            shape: 'rect',
-            color: 'blue',
-            layout: 'vertical',
-            label: 'pay'
-        },
-
-        createOrder: function(data, actions) {
-            return actions.order.create({
-                purchase_units: [{
-                    amount: {
-                        value: amount,
-                        currency_code: 'USD'
-                    },
-                    description: 'Pick 4 Baseball - Account Balance Deposit'
-                }]
-            });
-        },
-
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
-                // Show processing message
-                var container = document.getElementById('paypal-button-container');
-                container.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>';
-
-                // Send to backend to verify and credit account
-                fetch('{% url "process_paypal_payment" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        order_id: data.orderID,
-                        amount: amount,
-                        payer_email: details.payer.email_address
-                    })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        // Show success message
-                        container.innerHTML = `
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                <strong>Payment successful!</strong><br>
-                                $${amount} has been added to your account.<br>
-                                New balance: $${result.new_balance}
-                            </div>
-                        `;
-
-                        // Reload page after 2 seconds
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        // Show error
-                        container.innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Error processing payment:</strong><br>
-                                ${result.error}
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    container.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            An error occurred processing your payment. Please contact support.
-                        </div>
-                    `;
-                });
-            });
-        },
-
-        onError: function(err) {
-            console.error('PayPal error:', err);
-            var container = document.getElementById('paypal-button-container');
-            container.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    An error occurred with PayPal. Please try again or use a different payment method.
-                </div>
-            `;
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.textContent = data.error || 'Error processing withdrawal';
+            messageDiv.classList.remove('d-none');
         }
-    }).render('#paypal-button-container');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error submitting withdrawal request');
+    }
 }
-
-// Re-render PayPal buttons when amount changes
-document.getElementById('paypal-amount').addEventListener('change', renderPayPalButtons);
 </script>
+
 {% endblock %}

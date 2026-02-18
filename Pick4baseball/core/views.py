@@ -45,7 +45,7 @@ from .forms import (
     AccountInfoForm
 )
 from .services.balance_service import BalanceService
-from .services.balance_service import auto_deduct_weekly_fee
+from .services.balance_service import auto_deduct_weekly_fee, get_balance_status
 
 import secrets
 import stripe
@@ -121,11 +121,6 @@ def register(request):
 
             if email_sent:
                 # Also send welcome email (non-blocking - don't fail registration if it fails)
-                try:
-                    send_welcome_email(user)
-                    logger.info(f"Welcome email sent to {user.email}")
-                except Exception as e:
-                    logger.error(f"Failed to send welcome email to {user.email}: {e}")
 
                 messages.success(
                     request,
@@ -151,6 +146,14 @@ def verify_email(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save()
+
+        # Send welcome email AFTER verification
+        try:
+            send_welcome_email(user)
+            logger.info(f"Welcome email sent to {user.email}")
+        except Exception as e:
+            logger.error(f"Failed to send welcome email to {user.email}: {e}")
+
         messages.success(request, "Your email has been verified. You can now log in.")
         return redirect('login')
     else:
@@ -261,6 +264,12 @@ def home(request):
     # TODO: Optimize this query or cache it
     # For now, leaving as '-'
 
+    team_membership = request.user.team_memberships.filter(status='active').first()
+    if team_membership:
+        balance_status = get_balance_status(request.user, team_membership.team)
+    else:
+        balance_status = None
+
     context = {
         # New user onboarding
         'show_onboarding': is_new_user,
@@ -280,6 +289,8 @@ def home(request):
         'season_points': season_points,
         'season_rank': season_rank,
         'week_points': week_points,
+        'balance_status': balance_status,
+        'team': team_membership.team if team_membership else None,
     }
 
     return render(request, 'home.html', context)

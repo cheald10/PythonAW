@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #0d6efd; color: white; padding: 20px; text-align: center; }
+        .content { background: #f8f9fa; padding: 30px; border: 1px solid #dee2e6; }
+        .alert-box { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .button { display: inline-block; padding: 12px 30px; background: #0d6efd; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; color: #6c757d; font-size: 12px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠️ Low Balance Alert</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hi {{ user.first_name|default:user.username }},</p>
+            
+            <div class="alert-box">
+                <strong>Your account balance is running low!</strong>
+                <p style="margin: 10px 0;">
+                    Current Balance: <strong>${{ balance }}</strong><br>
+                    Weeks Remaining: <strong>~{{ weeks_remaining }}</strong>
+                </p>
+            </div>
+            
+            <p>To avoid interruption in your weekly picks, we recommend adding funds to your account.</p>
+            
+            <p><strong>What happens if my balance runs out?</strong></p>
+            <ul>
+                <li>You won't be able to make picks until you add funds</li>
+                <li>Your spot in the game is held - you won't lose your place</li>
+                <li>Adding funds is quick and easy</li>
+            </ul>
+            
+            <div style="text-align: center;">
+                <a href="{{ add_funds_url }}" class="button">Add Funds Now</a>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #6c757d;">
+                <strong>Pro Tip:</strong> Set up a season prepay to never worry about running out!
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>Baseball Pick 4 | <a href="{{ settings_url }}">Account Settings</a></p>
+            <p>You're receiving this because you have auto-pay enabled with a low balance.</p>
+        </div>
+    </div>
+</body>
+</html>

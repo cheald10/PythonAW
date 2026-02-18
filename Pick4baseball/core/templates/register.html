@@ -28,6 +28,45 @@
             </div>
 
             <div class="card-body">
+
+                <!-- Error Summary Banner (shown on failed submission) -->
+                {% if form.errors %}
+                <div class="alert alert-danger" role="alert" id="error-summary" tabindex="-1">
+                    <h2 class="h6 fw-bold mb-2">
+                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        Please fix the following before continuing:
+                    </h2>
+                    <ul class="mb-0 ps-3">
+                        {% if form.username.errors %}
+                            <li><strong>Username:</strong> {{ form.username.errors|join:", " }}</li>
+                        {% endif %}
+                        {% if form.email.errors %}
+                            <li><strong>Email Address:</strong> {{ form.email.errors|join:", " }}</li>
+                        {% endif %}
+                        {% if form.first_name.errors %}
+                            <li><strong>First Name:</strong> {{ form.first_name.errors|join:", " }}</li>
+                        {% endif %}
+                        {% if form.last_name.errors %}
+                            <li><strong>Last Name:</strong> {{ form.last_name.errors|join:", " }}</li>
+                        {% endif %}
+                        {% if form.password1.errors %}
+                            <li><strong>Password:</strong> {{ form.password1.errors|join:", " }}</li>
+                        {% endif %}
+                        {% if form.password2.errors %}
+                            <li><strong>Confirm Password:</strong> {{ form.password2.errors|join:", " }}</li>
+                        {% endif %}
+                        {% if form.agree_to_terms.errors %}
+                            <li><strong>Terms of Service:</strong> You must agree to the Terms of Service and Privacy Policy to create an account.</li>
+                        {% endif %}
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
                 <!-- Introduction Text -->
                 <div class="alert alert-info" role="status">
                     <p class="mb-0">
@@ -36,13 +75,13 @@
                     </p>
                 </div>
 
-            <!-- Required Fields Note -->
-            <div class="alert alert-light border mb-4">
-                <small class="text-muted">
+                <!-- Required Fields Note -->
+                <div class="alert alert-light border mb-4">
+                    <small class="text-muted">
                         <i class="fas fa-asterisk text-danger" style="font-size: 0.6em;"></i>
                         <strong>Required field</strong> – These fields must be filled out to create your account.
-                </small>
-            </div>
+                    </small>
+                </div>
 
                 <!-- Registration Form -->
                 <form method="post"
@@ -59,14 +98,15 @@
                             <label for="{{ form.username.id_for_label }}" class="form-label">
                                 Username <span class="required-indicator" aria-label="required">*</span>
                             </label>
-                            {{ form.username|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:username-help"|attr:"autofocus:autofocus" }}
                             {% if form.username.errors %}
+                                {{ form.username|add_class:"form-control is-invalid"|attr:"aria-required:true"|attr:"aria-describedby:username-error"|attr:"aria-invalid:true"|attr:"autofocus:autofocus" }}
                                 <div class="invalid-feedback d-block" role="alert" id="username-error">
                                     {% for error in form.username.errors %}
                                         <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ error }}
                                     {% endfor %}
                                 </div>
                             {% else %}
+                                {{ form.username|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:username-help"|attr:"autofocus:autofocus" }}
                                 <small id="username-help" class="form-text text-muted">
                                     Choose a unique username (3-150 characters, letters, numbers, and @/./+/-/_ only)
                                 </small>
@@ -78,14 +118,15 @@
                             <label for="{{ form.email.id_for_label }}" class="form-label">
                                 Email Address <span class="required-indicator" aria-label="required">*</span>
                             </label>
-                            {{ form.email|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:email-help"|attr:"type:email" }}
                             {% if form.email.errors %}
+                                {{ form.email|add_class:"form-control is-invalid"|attr:"aria-required:true"|attr:"aria-describedby:email-error"|attr:"aria-invalid:true"|attr:"type:email" }}
                                 <div class="invalid-feedback d-block" role="alert" id="email-error">
                                     {% for error in form.email.errors %}
                                         <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ error }}
                                     {% endfor %}
                                 </div>
                             {% else %}
+                                {{ form.email|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:email-help"|attr:"type:email" }}
                                 <small id="email-help" class="form-text text-muted">
                                     We'll use this for account recovery and important notifications
                                 </small>
@@ -97,17 +138,16 @@
                             <label for="{{ form.first_name.id_for_label }}" class="form-label">
                                 First Name
                             </label>
-                            {{ form.first_name|add_class:"form-control"|attr:"aria-describedby:first-name-help" }}
                             {% if form.first_name.errors %}
+                                {{ form.first_name|add_class:"form-control is-invalid"|attr:"aria-describedby:first-name-error"|attr:"aria-invalid:true" }}
                                 <div class="invalid-feedback d-block" role="alert" id="first-name-error">
                                     {% for error in form.first_name.errors %}
                                         <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ error }}
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <small id="first-name-help" class="form-text text-muted">
-                                    Optional
-                                </small>
+                                {{ form.first_name|add_class:"form-control"|attr:"aria-describedby:first-name-help" }}
+                                <small id="first-name-help" class="form-text text-muted">Optional</small>
                             {% endif %}
                         </div>
 
@@ -116,17 +156,16 @@
                             <label for="{{ form.last_name.id_for_label }}" class="form-label">
                                 Last Name
                             </label>
-                            {{ form.last_name|add_class:"form-control"|attr:"aria-describedby:last-name-help" }}
                             {% if form.last_name.errors %}
+                                {{ form.last_name|add_class:"form-control is-invalid"|attr:"aria-describedby:last-name-error"|attr:"aria-invalid:true" }}
                                 <div class="invalid-feedback d-block" role="alert" id="last-name-error">
                                     {% for error in form.last_name.errors %}
                                         <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ error }}
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <small id="last-name-help" class="form-text text-muted">
-                                    Optional
-                                </small>
+                                {{ form.last_name|add_class:"form-control"|attr:"aria-describedby:last-name-help" }}
+                                <small id="last-name-help" class="form-text text-muted">Optional</small>
                             {% endif %}
                         </div>
 
@@ -136,7 +175,11 @@
                                 Password <span class="required-indicator" aria-label="required">*</span>
                             </label>
                             <div class="input-group">
-                                {{ form.password1|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password1-help" }}
+                                {% if form.password1.errors %}
+                                    {{ form.password1|add_class:"form-control is-invalid"|attr:"aria-required:true"|attr:"aria-describedby:password1-error"|attr:"aria-invalid:true" }}
+                                {% else %}
+                                    {{ form.password1|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password1-help" }}
+                                {% endif %}
                                 <button class="btn btn-outline-secondary"
                                         type="button"
                                         id="togglePassword1"
@@ -169,7 +212,11 @@
                                 Confirm Password <span class="required-indicator" aria-label="required">*</span>
                             </label>
                             <div class="input-group">
-                                {{ form.password2|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password2-help" }}
+                                {% if form.password2.errors %}
+                                    {{ form.password2|add_class:"form-control is-invalid"|attr:"aria-required:true"|attr:"aria-describedby:password2-error"|attr:"aria-invalid:true" }}
+                                {% else %}
+                                    {{ form.password2|add_class:"form-control"|attr:"aria-required:true"|attr:"aria-describedby:password2-help" }}
+                                {% endif %}
                                 <button class="btn btn-outline-secondary"
                                         type="button"
                                         id="togglePassword2"
@@ -191,46 +238,32 @@
                             {% endif %}
                         </div>
 
-                        <div class="form-check mb-3">
-                            {{ form.agree_to_terms }}
-                            <label class="form-check-label" for="{{ form.agree_to_terms.id_for_label }}">
-                                I agree to the
-                                <a href="{% url 'terms' %}" target="_blank">Terms of Service</a>
-                                and
-                                <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>.
-                            </label>
-                        </div>
-
-
-                        <!-- Terms Acceptance (if you have terms) -->
-                        <!-- Uncomment this section if you have terms of service
+                        <!-- Terms & Conditions -->
                         <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       id="acceptTerms"
-                                       required
-                                       aria-required="true"
-                                       aria-describedby="terms-help">
-                                <label class="form-check-label" for="acceptTerms">
-                                    I agree to the <a href="{% url 'terms' %}" target="_blank">Terms of Service</a> and <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a> <span class="required-indicator" aria-label="required">*</span>
+                            <div class="form-check {% if form.agree_to_terms.errors %}is-invalid{% endif %}">
+                                {{ form.agree_to_terms|add_class:"form-check-input"|attr:"aria-required:true"|attr:"aria-describedby:terms-help" }}
+                                <label class="form-check-label {% if form.agree_to_terms.errors %}text-danger{% endif %}"
+                                       for="{{ form.agree_to_terms.id_for_label }}">
+                                    I agree to the
+                                    <a href="{% url 'terms' %}" target="_blank">Terms of Service</a>
+                                    and
+                                    <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>.
+                                    <span class="required-indicator" aria-label="required">*</span>
                                 </label>
-                                <small id="terms-help" class="form-text text-muted d-block">
-                                    You must accept the terms to create an account
-                                </small>
                             </div>
+                            {% if form.agree_to_terms.errors %}
+                                <div class="invalid-feedback d-block" role="alert" id="terms-help">
+                                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                                    You must agree to the Terms of Service and Privacy Policy to create an account.
+                                </div>
+                            {% else %}
+                                <small id="terms-help" class="form-text text-muted d-block ms-4">
+                                    You must accept the terms to create an account.
+                                </small>
+                            {% endif %}
                         </div>
-                        -->
-                    </fieldset>
 
-                    <!-- Non-Field Errors -->
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger" role="alert" aria-live="assertive">
-                        {% for error in form.non_field_errors %}
-                            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{ error }}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
+                    </fieldset>
 
                     <!-- Submit Button -->
                     <div class="d-grid gap-2 mb-3">
@@ -302,6 +335,11 @@
 
     .form-control.is-invalid:focus {
         box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+
+    /* Terms checkbox error highlight */
+    .form-check.is-invalid .form-check-input {
+        border-color: #dc3545;
     }
 
     /* Password Requirements List */
@@ -402,39 +440,7 @@
             const emailField = document.getElementById('{{ form.email.id_for_label }}');
             const password1Field = document.getElementById('{{ form.password1.id_for_label }}');
             const password2Field = document.getElementById('{{ form.password2.id_for_label }}');
-
-            // Mark fields as invalid if they have errors
-            {% if form.username.errors %}
-            if (usernameField) {
-                usernameField.setAttribute('aria-invalid', 'true');
-                usernameField.setAttribute('aria-describedby', 'username-error');
-                usernameField.classList.add('is-invalid');
-            }
-            {% endif %}
-
-            {% if form.email.errors %}
-            if (emailField) {
-                emailField.setAttribute('aria-invalid', 'true');
-                emailField.setAttribute('aria-describedby', 'email-error');
-                emailField.classList.add('is-invalid');
-            }
-            {% endif %}
-
-            {% if form.password1.errors %}
-            if (password1Field) {
-                password1Field.setAttribute('aria-invalid', 'true');
-                password1Field.setAttribute('aria-describedby', 'password1-error');
-                password1Field.classList.add('is-invalid');
-            }
-            {% endif %}
-
-            {% if form.password2.errors %}
-            if (password2Field) {
-                password2Field.setAttribute('aria-invalid', 'true');
-                password2Field.setAttribute('aria-describedby', 'password2-error');
-                password2Field.classList.add('is-invalid');
-            }
-            {% endif %}
+            const termsField = document.getElementById('{{ form.agree_to_terms.id_for_label }}');
 
             // Password visibility toggle
             setupPasswordToggle('togglePassword1', '{{ form.password1.id_for_label }}');
@@ -449,23 +455,20 @@
                         const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
                         passwordField.setAttribute('type', type);
 
-                        // Update button state
                         const isPressed = type === 'text';
                         toggleButton.setAttribute('aria-pressed', isPressed);
 
-                        // Update icon
                         const icon = toggleButton.querySelector('i');
                         if (icon) {
                             icon.className = isPressed ? 'fas fa-eye-slash' : 'fas fa-eye';
                         }
 
-                        // Announce to screen readers
                         announceToScreenReader(isPressed ? 'Password visible' : 'Password hidden');
                     });
                 }
             }
 
-            // Password match validation
+            // Password match validation on blur
             if (password2Field) {
                 password2Field.addEventListener('blur', function() {
                     if (password1Field.value && password2Field.value) {
@@ -481,44 +484,74 @@
                 });
             }
 
-            // Form submission handling
+            // Client-side validation on submit (catches empty fields and unchecked terms before server round-trip)
             registerForm.addEventListener('submit', function(e) {
                 const submitButton = registerForm.querySelector('button[type="submit"]');
-
-                // Basic validation
                 let isValid = true;
-                const requiredFields = [usernameField, emailField, password1Field, password2Field];
+                const errors = [];
 
-                requiredFields.forEach(field => {
+                // Check required text fields
+                const requiredFields = [
+                    { field: usernameField, label: 'Username' },
+                    { field: emailField,    label: 'Email Address' },
+                    { field: password1Field, label: 'Password' },
+                    { field: password2Field, label: 'Confirm Password' },
+                ];
+
+                requiredFields.forEach(({ field, label }) => {
                     if (field && !field.value.trim()) {
                         field.setAttribute('aria-invalid', 'true');
                         field.classList.add('is-invalid');
+                        errors.push(label + ' is required.');
                         isValid = false;
                     }
                 });
 
                 // Check password match
-                if (password1Field.value !== password2Field.value) {
+                if (password1Field.value && password2Field.value &&
+                    password1Field.value !== password2Field.value) {
                     password2Field.setAttribute('aria-invalid', 'true');
                     password2Field.classList.add('is-invalid');
+                    errors.push('Passwords do not match.');
+                    isValid = false;
+                }
+
+                // Check terms checkbox
+                if (termsField && !termsField.checked) {
+                    termsField.classList.add('is-invalid');
+                    errors.push('You must agree to the Terms of Service and Privacy Policy.');
                     isValid = false;
                 }
 
                 if (!isValid) {
                     e.preventDefault();
 
-                    // Focus first invalid field
-                    const firstInvalid = registerForm.querySelector('[aria-invalid="true"]');
-                    if (firstInvalid) {
-                        firstInvalid.focus();
+                    // Build or update a client-side error summary at the top
+                    let summary = document.getElementById('error-summary');
+                    if (!summary) {
+                        summary = document.createElement('div');
+                        summary.id = 'error-summary';
+                        summary.setAttribute('tabindex', '-1');
+                        summary.className = 'alert alert-danger';
+                        summary.setAttribute('role', 'alert');
+                        registerForm.parentNode.insertBefore(summary, registerForm);
                     }
 
-                    // Announce error to screen readers
-                    announceToScreenReader('Please correct the errors in the form');
+                    let html = '<h2 class="h6 fw-bold mb-2"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Please fix the following before continuing:</h2><ul class="mb-0 ps-3">';
+                    errors.forEach(function(err) {
+                        html += '<li>' + err + '</li>';
+                    });
+                    html += '</ul>';
+                    summary.innerHTML = html;
+
+                    summary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    summary.focus();
+
+                    announceToScreenReader('Form has errors. Please review the error summary at the top of the form.');
                     return false;
                 }
 
-                // Disable submit button and show loading state
+                // Valid - disable submit and show loading state
                 if (submitButton) {
                     submitButton.disabled = true;
                     submitButton.setAttribute('aria-busy', 'true');
@@ -526,7 +559,7 @@
                 }
             });
 
-            // Clear invalid state on input
+            // Clear invalid state on input/change
             const allFields = registerForm.querySelectorAll('.form-control');
             allFields.forEach(field => {
                 field.addEventListener('input', function() {
@@ -536,6 +569,14 @@
                     }
                 });
             });
+
+            if (termsField) {
+                termsField.addEventListener('change', function() {
+                    if (this.checked) {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+            }
         }
 
         // Screen reader announcements
@@ -546,19 +587,20 @@
             announcement.classList.add('visually-hidden');
             announcement.textContent = message;
             document.body.appendChild(announcement);
-
             setTimeout(function() {
                 document.body.removeChild(announcement);
             }, 1000);
         }
 
-        // Auto-focus on first error field
+        // On server-side validation failure: scroll to and focus the error summary
         {% if form.errors %}
-        const firstError = document.querySelector('[aria-invalid="true"]');
-        if (firstError) {
-            firstError.focus();
+        const errorSummary = document.getElementById('error-summary');
+        if (errorSummary) {
+            errorSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            errorSummary.focus();
         }
         {% endif %}
+
     })();
 </script>
 {% endblock %}

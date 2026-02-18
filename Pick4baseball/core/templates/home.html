@@ -1,13 +1,42 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends 'base.html' %}
 
-{% block title %}Home - Baseball Pick 4{% endblock %}
+{% load dashboard_filters %}
 
 {% block content %}
 <div class="container mt-4">
 
-    {% if user.profile.payment_preference == 'weekly' and not banner_dismissed %}
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <!-- PRIORITY 1: No Team Alert - Show FIRST if user has no team -->
+    {% if not user_teams %}
+    <div class="alert alert-warning border-warning shadow-sm mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h4 class="alert-heading">
+                    <i class="fas fa-users-slash me-2"></i>
+                    You Haven't Joined a Team Yet!
+                </h4>
+                <p class="mb-2">
+                    You need to be part of a team to participate in Baseball Pick 4. You can either:
+                </p>
+                <ul class="mb-0">
+                    <li><strong>Join an existing team</strong> if you have a join code from a friend</li>
+                    <li><strong>Create your own team</strong> and invite others to join you</li>
+                </ul>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'join_team' %}" class="btn btn-success btn-lg mb-2 w-100">
+                    <i class="fas fa-sign-in-alt me-2"></i>Join Team
+                </a>
+                <a href="{% url 'create_team' %}" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-plus-circle me-2"></i>Create Team
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- PRIORITY 2: Payment Preference Banner - Show AFTER team check, only for week-to-week users -->
+    {% if user_teams and user.profile.payment_preference == 'weekly' and not banner_dismissed %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h5 class="alert-heading">
@@ -40,12 +69,12 @@
     function dismissBanner() {
         // Store in localStorage so it doesn't show again this session
         localStorage.setItem('prepay_banner_dismissed', 'true');
-        document.querySelector('.alert-warning').remove();
+        document.querySelector('.alert-info.alert-dismissible').remove();
     }
 
     // Check if banner was dismissed
     if (localStorage.getItem('prepay_banner_dismissed') === 'true') {
-        document.querySelector('.alert-warning')?.remove();
+        document.querySelector('.alert-info.alert-dismissible')?.remove();
     }
     </script>
     {% endif %}
@@ -85,6 +114,7 @@
                         </div>
                     {% endif %}
 
+                    {% if user_teams %}
                     <div class="mb-3">
                         <strong>Picks Made:</strong>
                         <span class="badge {% if picks_made == 4 %}bg-success{% elif picks_made > 0 %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
@@ -104,27 +134,42 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Join a team to make picks!</strong>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="card-footer">
-                    {% if time_remaining %}
-                        {% if picks_made < 4 %}
-                            <a href="{% url 'make_picks' %}" class="btn btn-primary btn-lg w-100">
-                                <i class="fas fa-plus-circle"></i> Make Picks
-                            </a>
+                    {% if user_teams %}
+                        {% if time_remaining %}
+                            {% if picks_made < 4 %}
+                                <a href="{% url 'make_picks' %}" class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-plus-circle"></i> Make Picks
+                                </a>
+                            {% else %}
+                                <a href="{% url 'make_picks' %}" class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-edit"></i> Edit Picks
+                                </a>
+                            {% endif %}
                         {% else %}
-                            <a href="{% url 'make_picks' %}" class="btn btn-success btn-lg w-100">
-                                <i class="fas fa-edit"></i> Edit Picks
+                            <button class="btn btn-secondary btn-lg w-100" disabled>
+                                <i class="fas fa-lock"></i> Deadline Passed
+                            </button>
+                        {% endif %}
+
+                        {% if picks_made > 0 %}
+                            <a href="{% url 'view_picks' %}" class="btn btn-outline-primary w-100 mt-2">
+                                <i class="fas fa-eye"></i> View Your Picks
                             </a>
                         {% endif %}
                     {% else %}
-                        <button class="btn btn-secondary btn-lg w-100" disabled>
-                            <i class="fas fa-lock"></i> Deadline Passed
-                        </button>
-                    {% endif %}
-
-                    {% if picks_made > 0 %}
-                        <a href="{% url 'view_picks' %}" class="btn btn-outline-primary w-100 mt-2">
-                            <i class="fas fa-eye"></i> View Your Picks
+                        <a href="{% url 'join_team' %}" class="btn btn-success btn-lg w-100 mb-2">
+                            <i class="fas fa-sign-in-alt"></i> Join a Team
+                        </a>
+                        <a href="{% url 'create_team' %}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus-circle"></i> Create Team
                         </a>
                     {% endif %}
                 </div>
@@ -200,29 +245,32 @@
             {% endfor %}
 
             {% else %}
+            <!-- Simplified card since big banner is already at top -->
             <div class="card border-warning">
                 <div class="card-header bg-warning">
                     <h5 class="mb-0">
-                        <i class="fas fa-exclamation-triangle"></i> No Team Yet!
+                        <i class="fas fa-info-circle"></i> Getting Started
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="mb-3">You need to join or create a team to make picks.</p>
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'create_team' %}" class="btn btn-primary">
-                            <i class="fas fa-plus-circle"></i> Create Team
-                        </a>
-                        <a href="{% url 'join_team' %}" class="btn btn-success">
-                            <i class="fas fa-sign-in-alt"></i> Join Team
-                        </a>
-                    </div>
+                    <p class="mb-2"><strong>New to Baseball Pick 4?</strong></p>
+                    <ol class="mb-3 small">
+                        <li>Join or create a team</li>
+                        <li>Choose your payment preference</li>
+                        <li>Make your picks each week</li>
+                        <li>Win cash prizes!</li>
+                    </ol>
+                    <a href="{% url 'rules' %}" class="btn btn-outline-info btn-sm w-100">
+                        <i class="fas fa-book"></i> Learn How to Play
+                    </a>
                 </div>
             </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Second Row: User Stats -->
+    <!-- Second Row: User Stats (only show if user has teams) -->
+    {% if user_teams %}
     <div class="row">
         <div class="col-md-12 mb-4">
             <div class="card border-success">
@@ -260,6 +308,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Quick Links -->
     <div class="row mt-4">
@@ -273,6 +322,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        {% if user_teams %}
                         <div class="col-md-3 col-sm-6 mb-2">
                             <a href="{% url 'leaderboard' %}" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-list-ol"></i> Leaderboard
@@ -283,6 +333,18 @@
                                 <i class="fas fa-chart-bar"></i> Results
                             </a>
                         </div>
+                        {% else %}
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <a href="{% url 'join_team' %}" class="btn btn-success w-100">
+                                <i class="fas fa-sign-in-alt"></i> Join Team
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <a href="{% url 'create_team' %}" class="btn btn-primary w-100">
+                                <i class="fas fa-plus-circle"></i> Create Team
+                            </a>
+                        </div>
+                        {% endif %}
                         <div class="col-md-3 col-sm-6 mb-2">
                             <a href="{% url 'rules' %}" class="btn btn-outline-info w-100">
                                 <i class="fas fa-book"></i> Rules
@@ -305,16 +367,42 @@
         <div class="col-12">
             <div class="alert alert-info">
                 <h4><i class="fas fa-info-circle"></i> No Active Week</h4>
-                <p>There is currently no active game week. Please check back later or contact your league administrator!</p>
+                <p>There is currently no active game week. {% if user_teams %}Check back later when the season starts!{% else %}While you wait, join or create a team to be ready when the season begins!{% endif %}</p>
                 <hr>
+                {% if not user_teams %}
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <a href="{% url 'join_team' %}" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-sign-in-alt"></i> Join Team
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{% url 'create_team' %}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus-circle"></i> Create Team
+                        </a>
+                    </div>
+                </div>
+                {% else %}
                 <p class="mb-0">
                     <a href="{% url 'rules' %}" class="btn btn-primary">
                         <i class="fas fa-book"></i> Learn How to Play
                     </a>
                 </p>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- Add after existing content -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Existing home content -->
+        </div>
+        <div class="col-md-4">
+            {% include 'components/prepay_status_widget.html' %}
+        </div>
+    </div>
+
     {% endif %}
 </div>
 {% endblock %}

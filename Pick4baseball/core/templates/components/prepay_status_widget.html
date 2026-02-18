@@ -1,0 +1,98 @@
+{% load dashboard_filters %}
+
+<div class="card border-primary mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-wallet me-2"></i>
+            Payment Status
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Balance Display -->
+        <div class="row mb-3">
+            <div class="col-6">
+                <small class="text-muted">Current Balance</small>
+                <h3 class="mb-0 text-success">${{ user.profile.account_balance|floatformat:2 }}</h3>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Weekly Fee</small>
+                <h3 class="mb-0">${{ team.weekly_fee|floatformat:2 }}</h3>
+            </div>
+        </div>
+
+        <!-- Payment Preference Badge -->
+        <div class="mb-3">
+            <small class="text-muted">Payment Method</small><br>
+            {% if user.profile.payment_preference == 'season' %}
+                <span class="badge bg-success">
+                    <i class="fas fa-calendar-check"></i> Season Prepay
+                </span>
+            {% elif user.profile.payment_preference == 'custom' %}
+                <span class="badge bg-info">
+                    <i class="fas fa-coins"></i> Custom Prepay
+                </span>
+            {% else %}
+                <span class="badge bg-secondary">
+                    <i class="fas fa-credit-card"></i> Week-to-Week
+                </span>
+            {% endif %}
+
+            {% if user.profile.auto_pay_enabled %}
+                <span class="badge bg-primary">
+                    <i class="fas fa-bolt"></i> Auto-Pay ON
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- Weeks Remaining Progress Bar -->
+        {% if user.profile.auto_pay_enabled and user.profile.prepay_weeks_remaining > 0 %}
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">Prepaid Weeks Remaining</small>
+                <strong>{{ user.profile.prepay_weeks_remaining }} weeks</strong>
+            </div>
+
+            {% with percentage=user.profile.prepay_weeks_remaining|mul:100|div:26 %}
+            <div class="progress" style="height: 20px;">
+                <div class="progress-bar
+                    {% if percentage > 50 %}bg-success
+                    {% elif percentage > 20 %}bg-warning
+                    {% else %}bg-danger{% endif %}"
+                    role="progressbar"
+                    style="width: {{ percentage }}%"
+                    aria-valuenow="{{ user.profile.prepay_weeks_remaining }}"
+                    aria-valuemin="0"
+                    aria-valuemax="26">
+                    {{ percentage|floatformat:0 }}%
+                </div>
+            </div>
+            {% endwith %}
+        </div>
+        {% endif %}
+
+        <!-- Low Balance Warning -->
+        {% if user.profile.account_balance < user.profile.low_balance_threshold %}
+        <div class="alert alert-warning mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Running Low!</strong>
+            Add funds to continue auto-pay.
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div class="row g-2">
+            {% if user.profile.payment_preference != 'season' %}
+            <div class="col-6">
+                <a href="{% url 'custom_amount_payment' %}" class="btn btn-sm btn-primary w-100">
+                    <i class="fas fa-plus-circle"></i> Add Funds
+                </a>
+            </div>
+            {% endif %}
+            <div class="col-6">
+                <a href="{% url 'transaction_history' %}" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="fas fa-history"></i> History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

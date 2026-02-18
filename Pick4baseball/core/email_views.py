@@ -37,7 +37,7 @@ def send_weekly_results_email(user, week, user_picks, team):
         total_games = user_picks.count()
 
         # Build URLs
-        domain = settings.SITE_DOMAIN
+        domain = settings.SITE_URL.replace('https://', '').replace('http://', '')
         leaderboard_url = f"https://{domain}{reverse('leaderboard')}"
         account_url = f"https://{domain}{reverse('account_settings')}"
         support_url = f"https://{domain}/contact/"
@@ -94,7 +94,7 @@ def send_picks_submitted_email(user, week, picks):
     """
     try:
         # Build URLs
-        domain = settings.SITE_DOMAIN
+        domain = settings.SITE_URL.replace('https://', '').replace('http://', '')
         edit_picks_url = f"https://{domain}{reverse('make_picks')}"
         account_url = f"https://{domain}{reverse('account_settings')}"
         support_url = f"https://{domain}/contact/"
@@ -153,7 +153,7 @@ def send_withdrawal_confirmation_email(user, withdrawal):
     """
     try:
         # Build URLs
-        domain = settings.SITE_DOMAIN
+        domain = settings.SITE_URL.replace('https://', '').replace('http://', '')
         transaction_history_url = f"https://{domain}{reverse('transaction_history')}"
         account_url = f"https://{domain}{reverse('account_settings')}"
         support_url = f"https://{domain}/contact/"
@@ -248,7 +248,7 @@ def send_welcome_email(user):
     """
     try:
         # Build URLs
-        domain = settings.SITE_DOMAIN
+        domain = settings.SITE_URL.replace('https://', '').replace('http://', '')
         team_url = f"https://{domain}{reverse('my_teams')}"
         picks_url = f"https://{domain}{reverse('make_picks')}"
         payment_url = f"https://{domain}{reverse('payment_portal')}"

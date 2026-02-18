@@ -1,0 +1,26 @@
+Hi {{ user.first_name|default:user.username }},
+
+LOW BALANCE ALERT
+=================
+
+Your account balance is running low!
+
+Current Balance: ${{ balance }}
+Weeks Remaining: ~{{ weeks_remaining }}
+
+To avoid interruption in your weekly picks, we recommend adding funds to your account.
+
+What happens if my balance runs out?
+- You won't be able to make picks until you add funds
+- Your spot in the game is held - you won't lose your place
+- Adding funds is quick and easy
+
+Add funds now: {{ add_funds_url }}
+
+Pro Tip: Set up a season prepay to never worry about running out!
+
+---
+Baseball Pick 4
+Account Settings: {{ settings_url }}
+
+You're receiving this because you have auto-pay enabled with a low balance.

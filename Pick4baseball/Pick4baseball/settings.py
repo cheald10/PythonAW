@@ -171,35 +171,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ==============================================================================
 # EMAIL CONFIGURATION
 # ==============================================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'cheald@healdandheritage.com'
+EMAIL_HOST_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD')
+DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <cheald@healdandheritage.com>'
+SERVER_EMAIL = 'cheald@healdandheritage.com'
 
-# Force production email for testing
-USE_PRODUCTION_EMAIL = True
-
-if DEBUG and not USE_PRODUCTION_EMAIL:
-    # Development: Emails print to console
-    EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
-    DEFAULT_FROM_EMAIL = 'Baseball Pick 4 <claytonheald@gmail.com>'
-    print("📧 Email Backend: Console")
-else:
-    # Production: SendGrid SMTP
-    EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'apikey'  # This is literal - don't change it
-    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-    SENDGRID_SANDBOX_MODE_IN_DEBUG = False
-    DEFAULT_FROM_EMAIL = 'Heald & Heritage <support@healdandheritage.com>'
-    SERVER_EMAIL = 'support@healdandheritage.com'
-    print("📧 Email Backend: SendGrid")
-
-    import sys
-    print("PYTHON RUNTIME:", sys.executable)
-# Email verification timeout
-EMAIL_VERIFICATION_TIMEOUT_HOURS = 24
-
-# Site domain for email links
-SITE_DOMAIN = 'cheald10.pythonanywhere.com'
+# Site URL for email links
+SITE_URL = os.environ.get('SITE_URL', 'https://cheald10.pythonanywhere.com')
 
 # ==============================================================================
 # DJANGO SITES FRAMEWORK

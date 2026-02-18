@@ -5,17 +5,18 @@
 
 {% block content %}
 
-<div class="container py-3">
-    <!-- Quick Tip -->
-    <div class="alert alert-info">
-        <h5><i class="fas fa-info-circle me-2"></i>Quick Tip</h5>
-        <p class="mb-0">
-            Enable <strong>auto-pay</strong> in your
-            <a href="{% url 'account_settings' %}" class="alert-link">Account Settings</a>
-            to automatically deduct weekly fees from your account balance.
-            No more manual payments needed!
-        </p>
-    </div>
+<!-- Quick Tip (only show if auto-pay is disabled) -->
+{% if not user.profile.auto_pay_enabled %}
+<div class="alert alert-info">
+    <h5><i class="fas fa-info-circle me-2"></i>Quick Tip</h5>
+    <p class="mb-0">
+        Enable <strong>auto-pay</strong> in your
+        <a href="{% url 'account_settings' %}" class="alert-link">Account Settings</a>
+        to automatically deduct weekly fees from your account balance.
+        No more manual payments needed!
+    </p>
+</div>
+{% endif %}
 
     <!-- Account Balance Card -->
     <div class="card border-primary mb-4">

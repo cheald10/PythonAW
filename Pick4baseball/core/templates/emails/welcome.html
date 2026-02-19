@@ -7,54 +7,51 @@
     <title>Welcome to Baseball Pick 4</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    
+
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 32px;">⚾ Welcome to Baseball Pick 4!</h1>
+        <h1 style="color: white; margin: 0; font-size: 32px;">&#9918; Welcome to Baseball Pick 4!</h1>
         <p style="color: white; margin: 15px 0 0 0; font-size: 16px;">Your sports picks pool adventure starts here</p>
     </div>
-    
+
     <!-- Main Content -->
     <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
-        
-        <p style="font-size: 18px; color: #333;">
-            Hi {{ user.username }}! 🎉
-        </p>
-        
+
+        <p style="font-size: 18px; color: #333;">Hi {{ user.username }}! &#127881;</p>
+
         <p style="font-size: 16px; color: #333;">
-            Thanks for joining Baseball Pick 4! You're now part of a competitive sports picks pool where you can test your baseball knowledge and win money every week.
+            Thanks for joining Baseball Pick 4! You're now part of a competitive sports picks pool where you
+            can test your baseball knowledge and win money every week.
         </p>
-        
+
         <!-- Quick Start -->
         <div style="background: #d4edda; padding: 20px; border-radius: 10px; border-left: 4px solid #28a745; margin: 25px 0;">
-            <h3 style="color: #155724; margin: 0 0 15px 0;">🚀 Get Started in 3 Easy Steps</h3>
+            <h3 style="color: #155724; margin: 0 0 15px 0;">&#128640; Get Started in 3 Easy Steps</h3>
             <ol style="color: #155724; margin: 0; padding-left: 20px;">
                 <li style="margin-bottom: 10px;"><strong><a href="{{ team_url }}" style="color: #155724;">Join a team or create your own</a></strong></li>
                 <li style="margin-bottom: 10px;"><strong><a href="{{ picks_url }}" style="color: #155724;">Make your picks for this week</a></strong></li>
                 <li style="margin-bottom: 10px;"><strong><a href="{{ payment_url }}" style="color: #155724;">Add funds to your account</a></strong></li>
             </ol>
         </div>
-        
+
         <!-- Rules Summary -->
         <div style="background: white; padding: 25px; border-radius: 10px; margin: 25px 0; border: 2px solid #667eea;">
-            <h3 style="color: #667eea; margin: 0 0 15px 0;">📋 How to Play & Win</h3>
+            <h3 style="color: #667eea; margin: 0 0 15px 0;">&#128203; How to Play &amp; Win</h3>
             <p style="color: #333; margin: 0 0 15px 0;">
-                Each week, pick 4 MLB games and predict the winners. Get all 4 correct to win the weekly prize! 
+                Each week, pick 4 MLB games and predict the winners. Get all 4 correct to win the weekly prize!
                 If nobody wins, the pot rolls over and grows bigger.
             </p>
             <div style="text-align: center; margin: 20px 0;">
                 <a href="{{ rules_url }}" style="display: inline-block; background: #667eea; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    Read Full Rules & Payouts
+                    Read Full Rules &amp; Payouts
                 </a>
             </div>
         </div>
-        
+
         <!-- Weekly Entry -->
         <div style="background: white; padding: 25px; border-radius: 10px; margin: 25px 0; border: 2px solid #ffc107;">
-            <h3 style="color: #856404; margin: 0 0 15px 0;">💰 Weekly Entry Fee</h3>
-            <p style="color: #333; margin: 0;">
-                Choose your entry level each week:
-            </p>
+            <h3 style="color: #856404; margin: 0 0 15px 0;">&#128176; Weekly Entry Fee</h3>
+            <p style="color: #333; margin: 0;">Choose your entry level each week:</p>
             <ul style="color: #333; margin: 10px 0; padding-left: 20px;">
                 <li><strong>$5/week</strong> - Smaller stakes, smaller prizes</li>
                 <li><strong>$10/week</strong> - Standard entry, bigger prizes</li>
@@ -63,38 +60,60 @@
                 All entry fees go into the weekly prize pool. Win big or watch the pot grow!
             </p>
         </div>
-        
+
+        <!-- Referral Program -->
+        <div style="background: white; padding: 25px; border-radius: 10px; margin: 25px 0; border: 2px solid #198754;">
+            <h3 style="color: #198754; margin: 0 0 15px 0;">&#127873; Earn $10 &#8212; Refer a Friend!</h3>
+            <p style="color: #333; margin: 0 0 12px 0;">
+                After you complete onboarding, you'll find your <strong>personal referral code</strong>
+                in <a href="{{ account_url }}" style="color: #198754;">Account Settings</a>.
+                Share it with friends and <strong>you both earn $10 in account credit</strong> when they qualify.
+            </p>
+            <div style="background: #f0fdf4; border-left: 4px solid #198754; padding: 15px 15px 15px 20px; border-radius: 0 5px 5px 0; margin: 15px 0;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #155724;">To unlock the $10 bonus, your friend must:</p>
+                <ol style="margin: 0; padding-left: 20px; color: #155724;">
+                    <li style="margin-bottom: 5px;">Register using <strong>your referral code</strong></li>
+                    <li style="margin-bottom: 5px;">Enable <strong>auto-pay</strong> during their onboarding</li>
+                    <li>Make a first deposit of <strong>$50 or more</strong></li>
+                </ol>
+            </div>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 14px;">
+                Your referral code appears in Account Settings as soon as you finish onboarding.
+                There's no limit &#8212; the more friends you bring in, the more you earn!
+            </p>
+        </div>
+
         <!-- Call to Action -->
         <div style="text-align: center; margin-top: 30px;">
             <a href="{{ get_started_url }}" style="display: inline-block; background: #28a745; color: white; padding: 18px 50px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">
                 Start Playing Now!
             </a>
         </div>
-        
+
         <!-- Support -->
         <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
             <h4 style="color: #333; margin: 0 0 10px 0;">Need Help?</h4>
             <p style="color: #666; margin: 0; font-size: 14px;">
-                Check out our <a href="{{ rules_url }}" style="color: #667eea;">Rules Page</a> for complete details, or 
+                Check out our <a href="{{ rules_url }}" style="color: #667eea;">Rules Page</a> for complete details, or
                 <a href="{{ support_url }}" style="color: #667eea;">contact us</a> if you have questions.
             </p>
         </div>
-        
+
         <p style="font-size: 14px; color: #666; margin-top: 30px; text-align: center;">
-            Good luck and welcome to the team! ⚾
+            Good luck and welcome to the team! &#9918;
         </p>
-        
+
     </div>
-    
+
     <!-- Footer -->
     <div style="text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 12px;">
         <p>Baseball Pick 4 - Weekly Sports Picks Pool</p>
         <p>
-            <a href="{{ account_url }}" style="color: #667eea; text-decoration: none;">Account Settings</a> | 
-            <a href="{{ rules_url }}" style="color: #667eea; text-decoration: none;">Rules</a> | 
+            <a href="{{ account_url }}" style="color: #667eea; text-decoration: none;">Account Settings</a> |
+            <a href="{{ rules_url }}" style="color: #667eea; text-decoration: none;">Rules</a> |
             <a href="{{ support_url }}" style="color: #667eea; text-decoration: none;">Support</a>
         </p>
     </div>
-    
+
 </body>
 </html>

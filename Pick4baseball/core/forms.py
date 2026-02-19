@@ -37,6 +37,19 @@ class RegistrationForm(UserCreationForm):
         }
     )
 
+    referral_code = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': "Enter a friend's referral code (optional)",
+            'style': 'text-transform: uppercase; letter-spacing: 2px;',
+            'id': 'id_referral_code',
+            'autocomplete': 'off',
+        }),
+        help_text='Have a referral code? Enter it here to qualify for a $10 welcome bonus.'
+    )
+
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'password1', 'password2']
@@ -63,6 +76,17 @@ class RegistrationForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError('An account with this email address already exists.')
         return email
+
+    def clean_referral_code(self):
+        """Validate referral code if provided — must exist in the system."""
+        code = self.cleaned_data.get('referral_code', '').strip().upper()
+        if code:
+            from core.models import UserProfile
+            if not UserProfile.objects.filter(referral_code=code).exists():
+                raise forms.ValidationError(
+                    'Invalid referral code. Please double-check the code with your friend.'
+                )
+        return code
 
 class LoginForm(forms.Form):
     """User login form"""

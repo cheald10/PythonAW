@@ -25,12 +25,16 @@ from django.db.models import (
 )
 from datetime import timedelta
 from decimal import Decimal
-from .email_utils import send_verification_email
+from .email_utils import (
+    send_verification_email,
+    send_referral_welcome_bonus_email,
+    send_referral_bonus_earned_email,
+)
 from .email_views import (
     send_welcome_email,
     send_picks_submitted_email,
     send_withdrawal_confirmation_email,
-    send_weekly_results_to_all_users
+    send_weekly_results_to_all_users,
 )
 from .models import (
     UserProfile, Week, MLBPlayer, Pick, PickCategory, Team, TeamMember, UserProfile,
@@ -102,8 +106,8 @@ def test_email(request):
 def register(request):
     """
     User registration view with email verification.
-    GET: Display registration form
-    POST: Process registration and send verification email
+    GET: Display registration form (pre-fills referral code from ?ref= URL param)
+    POST: Process registration, link referral if code provided, send verification email
     """
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
@@ -116,12 +120,26 @@ def register(request):
             username = form.cleaned_data.get('username')
             logger.info(f"New user registered: {username} ({user.email})")
 
+            # Link referral code if one was provided and validated by the form
+            referral_code = form.cleaned_data.get('referral_code', '').strip().upper()
+            if referral_code:
+                try:
+                    referrer_profile = UserProfile.objects.get(referral_code=referral_code)
+                    new_profile = user.profile
+                    new_profile.referred_by = referrer_profile
+                    new_profile.save()
+                    logger.info(
+                        f"User {username} registered with referral code "
+                        f"from {referrer_profile.user.username}"
+                    )
+                except Exception as e:
+                    # Never fail registration if referral linking has an unexpected error
+                    logger.error(f"Failed to link referral code for {username}: {e}")
+
             # Send verification email
             email_sent = send_verification_email(request, user)
 
             if email_sent:
-                # Also send welcome email (non-blocking - don't fail registration if it fails)
-
                 messages.success(
                     request,
                     f'Account created for {username}! Please check your email to verify your account.'
@@ -133,6 +151,10 @@ def register(request):
             logger.warning(f"Registration form validation failed: {form.errors}")
     else:
         form = RegistrationForm()
+        # Pre-fill referral code from URL ?ref= parameter so share links work seamlessly
+        ref_code = request.GET.get('ref', '').strip().upper()
+        if ref_code:
+            form.initial['referral_code'] = ref_code
 
     return render(request, 'register.html', {'form': form})
 
@@ -408,6 +430,13 @@ def account_settings(request):
         'total_paid': total_paid,
         'total_winnings': total_winnings,
         'net_profit': net_profit,
+        # Referral program stats
+        'referral_stats': {
+            'code': profile.referral_code,
+            'count': profile.referral_count,
+            'bonus_earned': profile.referral_bonus_earned,
+            'referrals': profile.referrals.select_related('user').all(),
+        },
     }
 
     return render(request, 'account_settings.html', context)

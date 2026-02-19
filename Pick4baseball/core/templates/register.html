@@ -58,6 +58,9 @@
                         {% if form.agree_to_terms.errors %}
                             <li><strong>Terms of Service:</strong> You must agree to the Terms of Service and Privacy Policy to create an account.</li>
                         {% endif %}
+                        {% if form.referral_code.errors %}
+                            <li><strong>Referral Code:</strong> {{ form.referral_code.errors|join:", " }}</li>
+                        {% endif %}
                         {% if form.non_field_errors %}
                             {% for error in form.non_field_errors %}
                                 <li>{{ error }}</li>
@@ -261,6 +264,38 @@
                                     You must accept the terms to create an account.
                                 </small>
                             {% endif %}
+                        </div>
+
+                        <!-- Referral Code Field -->
+                        <div class="mb-4">
+                            <label for="id_referral_code" class="form-label">
+                                Referral Code
+                                <span class="text-muted fw-normal fs-6">(Optional)</span>
+                            </label>
+                            {% if form.referral_code.errors %}
+                                {{ form.referral_code|add_class:"form-control is-invalid"|attr:"aria-describedby:referral-error" }}
+                                <div class="invalid-feedback d-block" role="alert" id="referral-error">
+                                    {% for error in form.referral_code.errors %}
+                                        <i class="fas fa-exclamation-circle" aria-hidden="true"></i> {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.referral_code|add_class:"form-control"|attr:"aria-describedby:referral-help" }}
+                            {% endif %}
+                            <small id="referral-help" class="form-text text-muted">
+                                Have a friend's code? Enter it above to qualify for a $10 welcome bonus.
+                            </small>
+                            <!-- Conditions box: hidden until user types a code (shown by JS) -->
+                            <div id="referral-conditions"
+                                 class="alert alert-success mt-2 mb-0 py-2{% if not form.referral_code.value %} d-none{% endif %}"
+                                 role="status">
+                                <strong><i class="fas fa-gift"></i> Referral code applied!</strong>
+                                To earn your <strong>$10 bonus</strong>, you must also:
+                                <ol class="mb-0 mt-1 ps-3">
+                                    <li>Enable <strong>auto-pay</strong> during onboarding</li>
+                                    <li>Make a first deposit of <strong>$50 or more</strong></li>
+                                </ol>
+                            </div>
                         </div>
 
                     </fieldset>
@@ -590,6 +625,20 @@
             setTimeout(function() {
                 document.body.removeChild(announcement);
             }, 1000);
+        }
+
+        // Referral code: auto-uppercase input + show/hide conditions box
+        const referralInput = document.getElementById('id_referral_code');
+        const conditionsBox = document.getElementById('referral-conditions');
+        if (referralInput && conditionsBox) {
+            referralInput.addEventListener('input', function () {
+                this.value = this.value.toUpperCase();
+                conditionsBox.classList.toggle('d-none', this.value.trim().length === 0);
+            });
+            // Show immediately if pre-filled (server-side ?ref= or form re-render after error)
+            if (referralInput.value.trim().length > 0) {
+                conditionsBox.classList.remove('d-none');
+            }
         }
 
         // On server-side validation failure: scroll to and focus the error summary

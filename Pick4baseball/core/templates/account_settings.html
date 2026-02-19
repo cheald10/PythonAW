@@ -488,6 +488,146 @@
                 </div>
             </div>
 
+            <!-- Referral Program Section -->
+            <div class="card shadow-sm mb-4 settings-section">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-gift"></i> Refer Friends &amp; Earn $10
+                    </h5>
+                </div>
+                <div class="card-body">
+
+                    <!-- How it works callout -->
+                    <div class="alert alert-info py-2 mb-4">
+                        <strong><i class="fas fa-info-circle"></i> How it works:</strong>
+                        Share your personal referral code with friends. When they:
+                        <ol class="mb-0 mt-1">
+                            <li>Register using <strong>your referral code</strong></li>
+                            <li>Enable <strong>auto-pay</strong> during their onboarding</li>
+                            <li>Make a first deposit of <strong>$50 or more</strong></li>
+                        </ol>
+                        ...you <strong>both</strong> receive <strong>$10</strong> credited to your account balance!
+                    </div>
+
+                    <!-- Code + Share link row -->
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label fw-bold">Your Referral Code</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="border rounded px-3 py-2 bg-light"
+                                     style="font-size: 1.5rem; font-weight: bold; letter-spacing: 4px; color: #0d6efd; font-family: monospace;">
+                                    {{ referral_stats.code }}
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm"
+                                        type="button"
+                                        onclick="copyReferralCode('{{ referral_stats.code }}')"
+                                        id="copy-referral-btn">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Share Your Sign-Up Link</label>
+                            <p class="text-muted small mb-1">Code pre-fills automatically when your friend clicks this link.</p>
+                            <div class="input-group">
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="referral-link-input"
+                                       value="{{ request.scheme }}://{{ request.get_host }}/register/?ref={{ referral_stats.code }}"
+                                       readonly>
+                                <button class="btn btn-outline-secondary btn-sm"
+                                        type="button"
+                                        onclick="copyReferralLink()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats strip -->
+                    <div class="row text-center mb-4">
+                        <div class="col-4">
+                            <div class="border rounded p-3">
+                                <div class="h3 mb-0 text-primary fw-bold">{{ referral_stats.count }}</div>
+                                <small class="text-muted">Friends Referred</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-3">
+                                <div class="h3 mb-0 text-success fw-bold">${{ referral_stats.bonus_earned|floatformat:2 }}</div>
+                                <small class="text-muted">Bonus Earned</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-3">
+                                <div class="h3 mb-0 text-warning fw-bold">$10</div>
+                                <small class="text-muted">Per Referral</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Referred users with condition-progress columns -->
+                    {% if referral_stats.referrals %}
+                    <h6 class="fw-bold mb-2">Your Referred Friends</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Joined</th>
+                                    <th class="text-center" title="Signed up with your code">Registered</th>
+                                    <th class="text-center" title="Auto-pay enabled">Auto-Pay</th>
+                                    <th class="text-center" title="Made a $50+ deposit">$50+ Deposit</th>
+                                    <th class="text-center">Bonus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rp in referral_stats.referrals %}
+                                <tr>
+                                    <td><strong>{{ rp.user.username }}</strong></td>
+                                    <td><small class="text-muted">{{ rp.user.date_joined|date:"M j, Y" }}</small></td>
+                                    <!-- Cond 1: always ✅ if they appear here -->
+                                    <td class="text-center"><span class="fs-5">✅</span></td>
+                                    <!-- Cond 2: auto-pay -->
+                                    <td class="text-center">
+                                        {% if rp.auto_pay_enabled %}
+                                            <span class="fs-5">✅</span>
+                                        {% else %}
+                                            <span class="fs-5 text-muted" title="Not yet enabled">⏳</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Cond 3: inferred from bonus_paid flag -->
+                                    <td class="text-center">
+                                        {% if rp.referral_bonus_paid %}
+                                            <span class="fs-5">✅</span>
+                                        {% else %}
+                                            <span class="fs-5 text-muted" title="Awaiting qualifying deposit">⏳</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if rp.referral_bonus_paid %}
+                                            <span class="badge bg-success">$10 Earned!</span>
+                                        {% elif rp.auto_pay_enabled %}
+                                            <span class="badge bg-warning text-dark">Awaiting $50 deposit</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Awaiting auto-pay</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                        No referrals yet — share your code to start earning!
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
             <!-- Security Section -->
             <div class="card shadow-sm mb-4 settings-section">
                 <div class="card-header bg-warning">
@@ -568,5 +708,38 @@
         }
     });
     {% endif %}
+
+    // Referral code copy button
+    function copyReferralCode(code) {
+        navigator.clipboard.writeText(code).then(function () {
+            const btn = document.getElementById('copy-referral-btn');
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.classList.replace('btn-outline-primary', 'btn-success');
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                btn.classList.replace('btn-success', 'btn-outline-primary');
+            }, 2000);
+        }).catch(() => {
+            // Fallback for browsers that block clipboard API
+            const el = document.createElement('textarea');
+            el.value = code;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        });
+    }
+
+    // Referral link copy button
+    function copyReferralLink() {
+        const input = document.getElementById('referral-link-input');
+        navigator.clipboard.writeText(input.value).then(function () {
+            input.style.background = '#d1e7dd';
+            setTimeout(() => { input.style.background = ''; }, 1500);
+        }).catch(() => {
+            input.select();
+            document.execCommand('copy');
+        });
+    }
 </script>
 {% endblock %}

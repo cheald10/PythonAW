@@ -140,3 +140,113 @@ def get_user_by_email(email):
         return User.objects.get(email=email)
     except User.DoesNotExist:
         return None
+
+
+def send_referral_welcome_bonus_email(new_user, referrer):
+    """
+    Email sent to the NEW USER when their referral bonus is credited.
+    Triggered when all 3 conditions are met (registered with code +
+    auto-pay enabled + $50+ deposit).
+
+    Args:
+        new_user: User object who earned the welcome bonus
+        referrer:  User object who originally shared their code
+
+    Returns:
+        bool: True if sent successfully
+    """
+    try:
+        from django.template.loader import render_to_string
+        from django.conf import settings
+
+        site_url = getattr(settings, 'SITE_URL', 'https://pick4baseball.com')
+        subject = '🎉 $10 Welcome Bonus Added to Your Account!'
+
+        html_content = render_to_string('emails/referral_welcome_bonus.html', {
+            'new_user': new_user,
+            'referrer': referrer,
+            'site_url': site_url,
+        })
+        text_content = (
+            f"Hi {new_user.first_name or new_user.username},\n\n"
+            f"Great news! Your $10 welcome referral bonus has been added to your "
+            f"account balance because you registered using "
+            f"{referrer.first_name or referrer.username}'s referral code and met "
+            f"all qualifying conditions.\n\n"
+            f"Log in to view your balance: {site_url}/account/settings/\n\n"
+            f"Your own referral code is: {new_user.profile.referral_code}\n"
+            f"Share it with friends — you BOTH get $10 when they qualify!\n\n"
+            f"Good luck this season!\n"
+            f"Baseball Pick 4"
+        )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[new_user.email],
+        )
+        email.attach_alternative(html_content, 'text/html')
+        email.send()
+
+        logger.info(f"Referral welcome bonus email sent to {new_user.email}")
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"Failed to send referral welcome bonus email to {new_user.email}: {e}"
+        )
+        return False
+
+
+def send_referral_bonus_earned_email(referrer, new_user):
+    """
+    Email sent to the REFERRER when their friend qualifies and the bonus is paid out.
+
+    Args:
+        referrer:  User object who shared their code
+        new_user:  User object whose deposit triggered the bonus
+
+    Returns:
+        bool: True if sent successfully
+    """
+    try:
+        from django.template.loader import render_to_string
+        from django.conf import settings
+
+        site_url = getattr(settings, 'SITE_URL', 'https://pick4baseball.com')
+        subject = f"💰 {new_user.username} qualified! $10 bonus added to your balance"
+
+        html_content = render_to_string('emails/referral_bonus_earned.html', {
+            'referrer': referrer,
+            'new_user': new_user,
+            'site_url': site_url,
+        })
+        text_content = (
+            f"Hi {referrer.first_name or referrer.username},\n\n"
+            f"{new_user.username} just made their qualifying deposit using your "
+            f"referral code — $10 has been added to your account balance!\n\n"
+            f"Total referrals: {referrer.profile.referral_count}\n"
+            f"Total bonus earned: ${referrer.profile.referral_bonus_earned}\n\n"
+            f"View your balance and referral stats: {site_url}/account/settings/\n\n"
+            f"Keep sharing your code ({referrer.profile.referral_code}) to earn more!\n\n"
+            f"Baseball Pick 4"
+        )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[referrer.email],
+        )
+        email.attach_alternative(html_content, 'text/html')
+        email.send()
+
+        logger.info(f"Referral bonus earned email sent to {referrer.email}")
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"Failed to send referral bonus earned email to {referrer.email}: {e}"
+        )
+        return False

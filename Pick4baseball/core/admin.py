@@ -68,6 +68,10 @@ class UserProfileAdmin(admin.ModelAdmin):
         'auto_pay_status',
         'prepay_weeks_remaining',
         'onboarding_status',
+        'referral_code',
+        'referral_count_display',
+        'referral_bonus_earned',
+        'referral_bonus_paid',
     ]
 
     list_filter = [
@@ -75,6 +79,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         'auto_pay_enabled',
         'onboarding_completed',
         'low_balance_alert_sent',
+        'referral_bonus_paid',
     ]
 
     search_fields = [
@@ -82,11 +87,14 @@ class UserProfileAdmin(admin.ModelAdmin):
         'user__email',
         'user__first_name',
         'user__last_name',
+        'referral_code',
     ]
 
     readonly_fields = [
         'last_auto_payment_week',
         'last_low_balance_alert',
+        'referral_code',         # Auto-generated, never manually edited
+        'referral_bonus_earned', # Managed by BalanceService, read-only in admin
     ]
 
     fieldsets = (
@@ -117,6 +125,15 @@ class UserProfileAdmin(admin.ModelAdmin):
                 'paypal_email',
                 'venmo_username',
             )
+        }),
+        ('Referral Program', {
+            'fields': (
+                'referral_code',
+                'referred_by',
+                'referral_bonus_earned',
+                'referral_bonus_paid',
+            ),
+            'description': 'Referral code is auto-generated on first save and is read-only.'
         }),
         ('Other', {
             'fields': (
@@ -170,15 +187,19 @@ class UserProfileAdmin(admin.ModelAdmin):
     def onboarding_status(self, obj):
         """Display onboarding status with icon"""
         if obj.onboarding_completed:
-            return format_html(
-                '<span style="color: green;">✓ Complete</span>'
-            )
+            return format_html('<span style="color: green;">✓ Complete</span>')
         else:
-            return format_html(
-                '<span style="color: orange;">⏳ Pending</span>'
-            )
+            return format_html('<span style="color: orange;">⏳ Pending</span>')
     onboarding_status.short_description = 'Onboarding'
     onboarding_status.admin_order_field = 'onboarding_completed'
+
+    def referral_count_display(self, obj):
+        """Show number of users this person has referred"""
+        count = obj.referrals.count()
+        if count == 0:
+            return format_html('<span style="color: gray;">0</span>')
+        return format_html('<span style="color: #0d6efd; font-weight: bold;">{}</span>', count)
+    referral_count_display.short_description = 'Referrals'
 
     actions = ['enable_auto_pay', 'disable_auto_pay', 'reset_onboarding']
 
@@ -247,7 +268,7 @@ class AccountTransactionAdmin(admin.ModelAdmin):
 
     def amount_display(self, obj):
         """Display amount with color based on type"""
-        if obj.transaction_type in ['deposit', 'winning']:
+        if obj.transaction_type in ['deposit', 'winning', 'referral_bonus']:
             color = 'green'
             prefix = '+'
         else:

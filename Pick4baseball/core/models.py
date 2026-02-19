@@ -147,12 +147,58 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # --- REFERRAL FIELDS ---
+    referral_code = models.CharField(
+        max_length=10,
+        unique=True,
+        blank=True,
+        help_text='Unique code to share with friends'
+    )
+    referred_by = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='referrals',
+        help_text='The user profile who referred this person'
+    )
+    referral_bonus_earned = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text='Total referral bonus credits earned'
+    )
+    referral_bonus_paid = models.BooleanField(
+        default=False,
+        help_text='Has this user triggered their referral bonus (made first payment)?'
+    )
+
     class Meta:
         verbose_name = 'User Profile'
         verbose_name_plural = 'User Profiles'
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
+
+    def save(self, *args, **kwargs):
+        # Auto-generate referral code if not set
+        if not self.referral_code:
+            self.referral_code = self._generate_referral_code()
+        super().save(*args, **kwargs)
+
+    def _generate_referral_code(self):
+        """Generate a unique 8-character referral code"""
+        import secrets
+        import string
+        while True:
+            code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+            if not UserProfile.objects.filter(referral_code=code).exists():
+                return code
+
+    @property
+    def referral_count(self):
+        """Number of users referred"""
+        return self.referrals.count()
 
     @property
     def net_profit(self):
@@ -182,6 +228,7 @@ class AccountTransaction(models.Model):
         ('payment', 'Payment'),           # Paid weekly fee from balance
         ('refund', 'Refund'),             # Payment refunded to balance
         ('adjustment', 'Admin Adjustment'), # Manual admin adjustment
+        ('referral_bonus', 'Referral Bonus'), # Referral credit for both users
     ]
 
     STATUS_CHOICES = [

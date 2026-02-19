@@ -25,6 +25,18 @@ Choose your entry level each week:
 
 All entry fees go into the weekly prize pool. Win big or watch the pot grow!
 
+EARN $10 — REFER A FRIEND:
+
+Once you complete onboarding, you'll find your personal referral code in Account
+Settings. Share it with friends — you'll both earn $10 in account credit when they:
+
+  1. Register using your referral code
+  2. Enable auto-pay during their onboarding
+  3. Make a first deposit of $50 or more
+
+The more friends you bring in, the more you earn. Look for your referral code in
+Account Settings after you finish setting up your account.
+
 START PLAYING NOW: {{ get_started_url }}
 
 NEED HELP?

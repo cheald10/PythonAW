@@ -9,32 +9,58 @@ from . import verification_views
 from core import paypal_views
 
 urlpatterns = [
-    # Home
+
+    # =========================================================================
+    # CORE / NAVIGATION
+    # =========================================================================
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('team/<int:team_id>/', views.team_detail, name='team_detail'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
-    path('register/', views.register, name='register'),
-    path("resend-verification/", views.resend_verification, name="resend_verification"),
     path('about/', views.about, name='about'),
     path('contact/', views.contact, name='contact'),
-    path("test-email/", views.test_email, name="test_email"),
+    path('rules/', views.rules, name='rules'),
+    path('terms/', views.terms, name='terms'),
+    path('privacy/', views.privacy, name='privacy'),
+    path('how-to-play/', views.how_to_play, name='how_to_play'),
+
+    # =========================================================================
+    # AUTHENTICATION & REGISTRATION
+    # =========================================================================
+    path('login/', views.login_view, name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
+    path('register/', views.register, name='register'),  # Supports ?ref=CODE for referral pre-fill
     path('verify/<uidb64>/<token>/', views.verify_email, name='verify_email'),
     path('verification-sent/', verification_views.verification_sent, name='verification_sent'),
+    path('resend-verification/', views.resend_verification, name='resend_verification'),
+
+    # Password Reset
+    path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+
+    # =========================================================================
+    # ACCOUNT SETTINGS
+    # =========================================================================
+    path('settings/', views.account_settings, name='account_settings'),
+    path('account/toggle-auto-pay/', views.toggle_auto_pay, name='toggle_auto_pay'),
+
+    # =========================================================================
+    # TEAMS
+    # =========================================================================
+    path('teams/', views.my_teams, name='my_teams'),
+    path('team/<int:team_id>/', views.team_detail, name='team_detail'),
     path('create-team/', views.create_team, name='create_team'),
     path('join-team/', views.join_team, name='join_team'),
-    path('how-to-play/', views.how_to_play, name='how_to_play'),
-    path('payments/debug/', views.payment_portal_debug, name='payment_portal_debug'),
 
-    # Picks
-
+    # =========================================================================
+    # PICKS
+    # =========================================================================
     path('picks/make/', views.make_picks, name='make_picks'),
     path('picks/view/', views.view_picks, name='view_picks'),
-    # In the Teams section
-    path('teams/', views.my_teams, name='my_teams'),
 
-    # Leaderboard - FIXED: All use views_leaderboard
+    # =========================================================================
+    # LEADERBOARD & RESULTS
+    # =========================================================================
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('leaderboard/teams/', views_leaderboard.team_leaderboard, name='team_leaderboard'),
     path('results/', views_leaderboard.weekly_results, name='weekly_results'),
@@ -42,70 +68,54 @@ urlpatterns = [
     path('profile/', views_leaderboard.user_profile, name='user_profile'),
     path('profile/<str:username>/', views_leaderboard.user_profile, name='user_profile_view'),
 
-    # Password Reset
-
-    path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-
-    # Info pages
-    path('rules/', views.rules, name='rules'),
-    path('terms/', views.terms, name='terms'),
-    path('privacy/', views.privacy, name='privacy'),
-    path('settings/', views.account_settings, name='account_settings'),
-    path('how-to-play/', views.how_to_play, name='how_to_play'),
-
-    # Payments
+    # =========================================================================
+    # PAYMENTS — PORTAL, HISTORY, BALANCE
+    # =========================================================================
     path('payments/', views.payment_portal, name='payment_portal'),
     path('payments/history/', views.payment_history, name='payment_history'),
     path('payments/confirmation/<int:payment_id>/', views.payment_confirmation, name='payment_confirmation'),
-    path('api/payments/create-intent/<int:team_id>/', views.create_payment_intent, name='create_payment_intent'),
-    path('webhooks/stripe/', views.stripe_webhook, name='stripe_webhook'),
-    path('payments/paypal/process/', views.process_paypal_payment, name='process_paypal_payment'),
-
     path('payments/pay-with-balance/', views.pay_with_balance, name='pay_with_balance'),
     path('payments/withdraw/', views.request_withdrawal, name='request_withdrawal'),
     path('payments/transactions/', views.transaction_history, name='transaction_history'),
-    # Prepay
-    # Payment Preference Onboarding
+
+    # Stripe
+    path('api/payments/create-intent/<int:team_id>/', views.create_payment_intent, name='create_payment_intent'),
+    path('webhooks/stripe/', views.stripe_webhook, name='stripe_webhook'),
+
+    # PayPal
+    path('payments/paypal/process/', views.process_paypal_payment, name='process_paypal_payment'),
+    path('api/paypal/create-order/', paypal_views.create_paypal_order, name='paypal_create_order'),
+    path('api/paypal/capture-order/', paypal_views.capture_paypal_order, name='paypal_capture_order'),
+
+    # =========================================================================
+    # ONBOARDING & PREPAY
+    # =========================================================================
     path('onboarding/payment-preference/',
          prepay_views.payment_preference_onboarding,
          name='payment_preference_onboarding'),
-
-    # Season Prepay
     path('onboarding/season-prepay/',
          prepay_views.season_prepay_payment,
          name='season_prepay_payment'),
-
-    path('payments/season-prepay-success/',
-         prepay_views.season_prepay_success,
-         name='season_prepay_success'),
-
-    # Custom Amount Prepay
     path('onboarding/custom-amount/',
          prepay_views.custom_amount_payment,
          name='custom_amount_payment'),
-
+    path('payments/season-prepay-success/',
+         prepay_views.season_prepay_success,
+         name='season_prepay_success'),
     path('payments/custom-prepay-success/',
          prepay_views.custom_prepay_success,
          name='custom_prepay_success'),
 
-    # PayPal Inline Checkout API
-    path('api/paypal/create-order/',
-         paypal_views.create_paypal_order,
-         name='paypal_create_order'),
-
-    path('api/paypal/capture-order/',
-         paypal_views.capture_paypal_order,
-         name='paypal_capture_order'),
-
-    path('account/toggle-auto-pay/',
-         views.toggle_auto_pay,
-         name='toggle_auto_pay'),
-
-    # Admin functions
+    # =========================================================================
+    # ADMIN FUNCTIONS
+    # =========================================================================
     path('admin/week/<int:week_id>/complete/', views.admin_complete_week, name='admin_complete_week'),
+
+    # =========================================================================
+    # DEBUG / DEV ONLY (remove or guard before production)
+    # =========================================================================
+    path('payments/debug/', views.payment_portal_debug, name='payment_portal_debug'),
+    path('test-email/', views.test_email, name='test_email'),
 ]
 
 if settings.DEBUG:
